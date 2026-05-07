@@ -9,14 +9,15 @@ import android.widget.EditText
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.busbooking.R
 import com.example.busbooking.data.db.BusBookingDatabase
-import com.example.busbooking.domain.repository.UserRepository
-import com.example.busbooking.presentation.viewmodel.AuthViewModel
-import com.example.busbooking.utils.UiState
+import com.example.busbooking.domain.models.Result
+import com.example.busbooking.domain.repository.AuthRepository
+import com.example.busbooking.utils.SessionManager
 import com.google.android.material.snackbar.Snackbar
+import kotlinx.coroutines.launch
 
 class LoginFragment : Fragment() {
     private lateinit var emailInput: EditText
@@ -26,88 +27,67 @@ class LoginFragment : Fragment() {
     private lateinit var progressBar: ProgressBar
     private lateinit var errorText: TextView
 
-    private val viewModel: AuthViewModel by viewModels {
-        val db = BusBookingDatabase.getInstance(requireContext())
-        val userRepository = UserRepository(db.userDao())
-        object : androidx.lifecycle.ViewModelProvider.Factory {
-            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-                return AuthViewModel(userRepository) as T
-            }
-        }
+    private val authRepository by lazy {
+        AuthRepository(BusBookingDatabase.getInstance(requireContext()).userDao())
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         return inflater.inflate(R.layout.fragment_login, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        initializeViews(view)
-        setupListeners()
-        setupObservers()
-    }
-
-    private fun initializeViews(view: View) {
         emailInput = view.findViewById(R.id.emailInput)
         passwordInput = view.findViewById(R.id.passwordInput)
         loginButton = view.findViewById(R.id.loginButton)
         registerButton = view.findViewById(R.id.registerButton)
         progressBar = view.findViewById(R.id.progressBar)
         errorText = view.findViewById(R.id.errorText)
-    }
-
-    private fun setupListeners() {
-        loginButton.setOnClickListener {
-            val email = emailInput.text.toString()
-            val password = passwordInput.text.toString()
-            viewModel.loginUser(email, password)
-        }
 
         registerButton.setOnClickListener {
             findNavController().navigate(R.id.action_loginFragment_to_registerFragment)
         }
+
+        loginButton.setOnClickListener {
+            val email = emailInput.text.toString().trim()
+            val password = passwordInput.text.toString()
+            if (email.isBlank() || password.isBlank()) {
+                showError("Email and password are required")
+                return@setOnClickListener
+            }
+            doLogin(email, password)
+        }
     }
 
-    private fun setupObservers() {
-        viewModel.loginState.observe(viewLifecycleOwner) { state ->
-            when (state) {
-                is UiState.Loading -> {
-                    progressBar.visibility = View.VISIBLE
-                    loginButton.isEnabled = false
-                    errorText.visibility = View.GONE
-                }
-                is UiState.Success -> {
+    private fun doLogin(email: String, password: String) {
+        progressBar.visibility = View.VISIBLE
+        errorText.visibility = View.GONE
+        loginButton.isEnabled = false
+        viewLifecycleOwner.lifecycleScope.launch {
+            when (val result = authRepository.loginUser(email, password)) {
+                is Result.Success -> {
+                    SessionManager.saveSession(result.data)
                     progressBar.visibility = View.GONE
                     loginButton.isEnabled = true
-                    val role = state.data.role
-                    if (role == "ADMIN") {
+                    if (result.data.role == "ADMIN") {
                         findNavController().navigate(R.id.action_loginFragment_to_adminDashboardFragment)
                     } else {
                         findNavController().navigate(R.id.action_loginFragment_to_userDashboardFragment)
                     }
                 }
-                is UiState.Error -> {
+                is Result.Error -> {
                     progressBar.visibility = View.GONE
                     loginButton.isEnabled = true
-                    errorText.text = state.message
-                    errorText.visibility = View.VISIBLE
-                    Snackbar.make(loginButton, state.message, Snackbar.LENGTH_LONG).show()
+                    showError(result.message)
                 }
             }
         }
+    }
 
-        viewModel.validationErrors.observe(viewLifecycleOwner) { errors ->
-            errors.forEach { (field, message) ->
-                when (field) {
-                    "email" -> emailInput.error = message
-                    "password" -> passwordInput.error = message
-                }
-            }
-        }
+    private fun showError(message: String) {
+        errorText.text = message
+        errorText.visibility = View.VISIBLE
+        Snackbar.make(requireView(), message, Snackbar.LENGTH_LONG).show()
     }
 }
 

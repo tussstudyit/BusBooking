@@ -13,27 +13,22 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class SplashFragment : Fragment() {
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         return inflater.inflate(R.layout.fragment_splash, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         viewLifecycleOwner.lifecycleScope.launch {
-            delay(1500) // Show splash for 1.5 seconds
-            if (SessionManager.isSessionActive()) {
-                val role = SessionManager.getCurrentUserRole()
-                if (role == "ADMIN") {
-                    findNavController().navigate(R.id.action_splashFragment_to_adminDashboardFragment)
-                } else {
-                    findNavController().navigate(R.id.action_splashFragment_to_userDashboardFragment)
-                }
-            } else {
+            delay(1000)
+            if (!SessionManager.isSessionActive()) {
                 findNavController().navigate(R.id.action_splashFragment_to_loginFragment)
+                return@launch
+            }
+            if (SessionManager.getCurrentUserRole() == "ADMIN") {
+                findNavController().navigate(R.id.action_splashFragment_to_adminDashboardFragment)
+            } else {
+                findNavController().navigate(R.id.action_splashFragment_to_userDashboardFragment)
             }
         }
     }

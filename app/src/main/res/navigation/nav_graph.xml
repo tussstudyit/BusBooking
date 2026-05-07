@@ -99,7 +99,8 @@
         android:label="Trip Details">
         <argument
             android:name="tripId"
-            app:argType="long" />
+            app:argType="long"
+            android:defaultValue="-1" />
         <action
             android:id="@+id/action_tripDetailsFragment_to_seatSelectionFragment"
             app:destination="@id/seatSelectionFragment" />
@@ -111,7 +112,8 @@
         android:label="Select Seats">
         <argument
             android:name="tripId"
-            app:argType="long" />
+            app:argType="long"
+            android:defaultValue="-1" />
         <action
             android:id="@+id/action_seatSelectionFragment_to_bookingConfirmationFragment"
             app:destination="@id/bookingConfirmationFragment" />
@@ -123,7 +125,8 @@
         android:label="Confirm Booking">
         <argument
             android:name="ticketId"
-            app:argType="long" />
+            app:argType="long"
+            android:defaultValue="-1" />
         <action
             android:id="@+id/action_bookingConfirmationFragment_to_myTicketsFragment"
             app:destination="@id/myTicketsFragment"
@@ -146,7 +149,8 @@
         android:label="Ticket Details">
         <argument
             android:name="ticketId"
-            app:argType="long" />
+            app:argType="long"
+            android:defaultValue="-1" />
     </fragment>
 
     <fragment
@@ -289,4 +293,3 @@
     </fragment>
 
 </navigation>
-
