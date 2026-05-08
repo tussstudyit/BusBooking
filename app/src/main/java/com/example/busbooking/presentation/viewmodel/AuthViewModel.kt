@@ -4,88 +4,66 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.busbooking.data.entity.User
-import com.example.busbooking.domain.repository.UserRepository
-import com.example.busbooking.utils.SessionManager
-import com.example.busbooking.utils.UiState
+import com.example.busbooking.data.session.SessionManager
+import com.example.busbooking.domain.repository.AuthRepository
+import com.example.busbooking.presentation.ui.state.AuthState
 import kotlinx.coroutines.launch
 
-class AuthViewModel(private val userRepository: UserRepository) : ViewModel() {
-    private val _loginState = MutableLiveData<UiState<User>>()
-    val loginState: LiveData<UiState<User>> = _loginState
+class AuthViewModel(
+    private val authRepository: AuthRepository
+) : ViewModel() {
 
-    private val _registerState = MutableLiveData<UiState<Long>>()
-    val registerState: LiveData<UiState<Long>> = _registerState
+    private val _authState = MutableLiveData<AuthState>(AuthState.Idle)
+    val authState: LiveData<AuthState> = _authState
 
-    private val _validationErrors = MutableLiveData<Map<String, String>>()
-    val validationErrors: LiveData<Map<String, String>> = _validationErrors
-
-    private val _logoutEvent = MutableLiveData<Boolean>()
-    val logoutEvent: LiveData<Boolean> = _logoutEvent
-
-    fun loginUser(email: String, password: String) {
-        val errors = validateLoginInput(email, password)
-        if (errors.isNotEmpty()) {
-            _validationErrors.value = errors
+    fun login(email: String, password: String) {
+        if (email.isBlank() || password.isBlank()) {
+            _authState.value = AuthState.Error("Please fill all fields")
             return
         }
 
-        _loginState.value = UiState.Loading("Logging in...")
+        _authState.value = AuthState.Loading
+
         viewModelScope.launch {
-            val result = userRepository.loginUser(email, password)
-            result.onSuccess { user ->
-                SessionManager.saveSession(user)
-                _loginState.value = UiState.Success(user)
-            }
-            result.onFailure { exception ->
-                _loginState.value = UiState.Error(exception.message ?: "Login failed")
+            when (val result = authRepository.loginUser(email, password)) {
+                is com.example.busbooking.domain.models.Result.Success -> {
+                    SessionManager.saveSession(result.data)
+                    _authState.value = AuthState.LoginSuccess(result.data)
+                }
+                is com.example.busbooking.domain.models.Result.Error -> {
+                    _authState.value = AuthState.Error(result.message)
+                }
+                else -> {
+                    _authState.value = AuthState.Error("Unknown error")
+                }
             }
         }
     }
 
-    fun registerUser(name: String, email: String, password: String, phone: String) {
-        val errors = validateRegisterInput(name, email, password, phone)
-        if (errors.isNotEmpty()) {
-            _validationErrors.value = errors
+    fun register(name: String, email: String, password: String, phone: String) {
+        if (name.isBlank() || email.isBlank() || password.isBlank() || phone.isBlank()) {
+            _authState.value = AuthState.Error("Please fill all fields")
             return
         }
 
-        _registerState.value = UiState.Loading("Registering...")
+        _authState.value = AuthState.Loading
+
         viewModelScope.launch {
-            val result = userRepository.registerUser(name, email, password, phone)
-            result.onSuccess { userId ->
-                _registerState.value = UiState.Success(userId)
-            }
-            result.onFailure { exception ->
-                _registerState.value = UiState.Error(exception.message ?: "Registration failed")
+            when (val result = authRepository.registerUser(name, email, password, phone)) {
+                is com.example.busbooking.domain.models.Result.Success -> {
+                    _authState.value = AuthState.RegisterSuccess(result.data)
+                }
+                is com.example.busbooking.domain.models.Result.Error -> {
+                    _authState.value = AuthState.Error(result.message)
+                }
+                else -> {
+                    _authState.value = AuthState.Error("Unknown error")
+                }
             }
         }
     }
 
-    fun logoutUser() {
-        SessionManager.clearSession()
-        _logoutEvent.value = true
-    }
-
-    private fun validateLoginInput(email: String, password: String): Map<String, String> {
-        val errors = mutableMapOf<String, String>()
-        if (email.isBlank()) errors["email"] = "Email is required"
-        else if (!email.contains("@")) errors["email"] = "Invalid email format"
-        if (password.isBlank()) errors["password"] = "Password is required"
-        else if (password.length < 6) errors["password"] = "Password must be at least 6 characters"
-        return errors
-    }
-
-    private fun validateRegisterInput(name: String, email: String, password: String, phone: String): Map<String, String> {
-        val errors = mutableMapOf<String, String>()
-        if (name.isBlank()) errors["name"] = "Name is required"
-        if (email.isBlank()) errors["email"] = "Email is required"
-        else if (!email.contains("@")) errors["email"] = "Invalid email format"
-        if (password.isBlank()) errors["password"] = "Password is required"
-        else if (password.length < 6) errors["password"] = "Password must be at least 6 characters"
-        if (phone.isBlank()) errors["phone"] = "Phone is required"
-        else if (phone.length < 10) errors["phone"] = "Phone must be at least 10 digits"
-        return errors
+    fun resetState() {
+        _authState.value = AuthState.Idle
     }
 }
-

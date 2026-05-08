@@ -12,13 +12,14 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.example.busbooking.R
-import com.example.busbooking.data.db.BusBookingDatabase
-import com.example.busbooking.domain.repository.UserRepository
+import com.example.busbooking.presentation.ui.state.AuthState
 import com.example.busbooking.presentation.viewmodel.AuthViewModel
-import com.example.busbooking.utils.UiState
-import com.google.android.material.snackbar.Snackbar
+import com.example.busbooking.utils.SessionManager
 
 class LoginFragment : Fragment() {
+
+    private val viewModel: AuthViewModel by viewModels()
+
     private lateinit var emailInput: EditText
     private lateinit var passwordInput: EditText
     private lateinit var loginButton: Button
@@ -26,19 +27,8 @@ class LoginFragment : Fragment() {
     private lateinit var progressBar: ProgressBar
     private lateinit var errorText: TextView
 
-    private val viewModel: AuthViewModel by viewModels {
-        val db = BusBookingDatabase.getInstance(requireContext())
-        val userRepository = UserRepository(db.userDao())
-        object : androidx.lifecycle.ViewModelProvider.Factory {
-            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-                return AuthViewModel(userRepository) as T
-            }
-        }
-    }
-
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
+        inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         return inflater.inflate(R.layout.fragment_login, container, false)
@@ -46,68 +36,58 @@ class LoginFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        initializeViews(view)
-        setupListeners()
-        setupObservers()
-    }
 
-    private fun initializeViews(view: View) {
         emailInput = view.findViewById(R.id.emailInput)
         passwordInput = view.findViewById(R.id.passwordInput)
         loginButton = view.findViewById(R.id.loginButton)
         registerButton = view.findViewById(R.id.registerButton)
         progressBar = view.findViewById(R.id.progressBar)
         errorText = view.findViewById(R.id.errorText)
-    }
 
-    private fun setupListeners() {
         loginButton.setOnClickListener {
-            val email = emailInput.text.toString()
-            val password = passwordInput.text.toString()
-            viewModel.loginUser(email, password)
+            val email = emailInput.text.toString().trim()
+            val password = passwordInput.text.toString().trim()
+            viewModel.login(email, password)
         }
 
         registerButton.setOnClickListener {
             findNavController().navigate(R.id.action_loginFragment_to_registerFragment)
         }
-    }
 
-    private fun setupObservers() {
-        viewModel.loginState.observe(viewLifecycleOwner) { state ->
+        viewModel.authState.observe(viewLifecycleOwner) { state ->
             when (state) {
-                is UiState.Loading -> {
+                is AuthState.Loading -> {
                     progressBar.visibility = View.VISIBLE
-                    loginButton.isEnabled = false
                     errorText.visibility = View.GONE
+                    loginButton.isEnabled = false
                 }
-                is UiState.Success -> {
+                is AuthState.LoginSuccess -> {
                     progressBar.visibility = View.GONE
+                    errorText.visibility = View.GONE
                     loginButton.isEnabled = true
-                    val role = state.data.role
-                    if (role == "ADMIN") {
-                        findNavController().navigate(R.id.action_loginFragment_to_adminDashboardFragment)
-                    } else {
-                        findNavController().navigate(R.id.action_loginFragment_to_userDashboardFragment)
-                    }
+                    navigateBasedOnRole()
                 }
-                is UiState.Error -> {
+                is AuthState.Error -> {
                     progressBar.visibility = View.GONE
-                    loginButton.isEnabled = true
                     errorText.text = state.message
                     errorText.visibility = View.VISIBLE
-                    Snackbar.make(loginButton, state.message, Snackbar.LENGTH_LONG).show()
+                    loginButton.isEnabled = true
+                }
+                else -> {
+                    progressBar.visibility = View.GONE
+                    errorText.visibility = View.GONE
+                    loginButton.isEnabled = true
                 }
             }
         }
+    }
 
-        viewModel.validationErrors.observe(viewLifecycleOwner) { errors ->
-            errors.forEach { (field, message) ->
-                when (field) {
-                    "email" -> emailInput.error = message
-                    "password" -> passwordInput.error = message
-                }
-            }
+    private fun navigateBasedOnRole() {
+        val role = SessionManager.getCurrentUserRole()
+        if (role == "ADMIN") {
+            findNavController().navigate(R.id.action_loginFragment_to_adminDashboardFragment)
+        } else {
+            findNavController().navigate(R.id.action_loginFragment_to_userDashboardFragment)
         }
     }
 }
-

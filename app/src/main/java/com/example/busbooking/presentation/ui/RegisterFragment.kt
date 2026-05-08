@@ -12,13 +12,13 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.example.busbooking.R
-import com.example.busbooking.data.db.BusBookingDatabase
-import com.example.busbooking.domain.repository.UserRepository
+import com.example.busbooking.presentation.ui.state.AuthState
 import com.example.busbooking.presentation.viewmodel.AuthViewModel
-import com.example.busbooking.utils.UiState
-import com.google.android.material.snackbar.Snackbar
 
 class RegisterFragment : Fragment() {
+
+    private val viewModel: AuthViewModel by viewModels()
+
     private lateinit var nameInput: EditText
     private lateinit var emailInput: EditText
     private lateinit var phoneInput: EditText
@@ -29,19 +29,8 @@ class RegisterFragment : Fragment() {
     private lateinit var progressBar: ProgressBar
     private lateinit var errorText: TextView
 
-    private val viewModel: AuthViewModel by viewModels {
-        val db = BusBookingDatabase.getInstance(requireContext())
-        val userRepository = UserRepository(db.userDao())
-        object : androidx.lifecycle.ViewModelProvider.Factory {
-            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-                return AuthViewModel(userRepository) as T
-            }
-        }
-    }
-
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
+        inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         return inflater.inflate(R.layout.fragment_register, container, false)
@@ -49,12 +38,7 @@ class RegisterFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        initializeViews(view)
-        setupListeners()
-        setupObservers()
-    }
 
-    private fun initializeViews(view: View) {
         nameInput = view.findViewById(R.id.nameInput)
         emailInput = view.findViewById(R.id.emailInput)
         phoneInput = view.findViewById(R.id.phoneInput)
@@ -64,63 +48,53 @@ class RegisterFragment : Fragment() {
         backButton = view.findViewById(R.id.backButton)
         progressBar = view.findViewById(R.id.progressBar)
         errorText = view.findViewById(R.id.errorText)
-    }
 
-    private fun setupListeners() {
         registerButton.setOnClickListener {
-            val name = nameInput.text.toString()
-            val email = emailInput.text.toString()
-            val phone = phoneInput.text.toString()
-            val password = passwordInput.text.toString()
-            val confirmPassword = confirmPasswordInput.text.toString()
+            val name = nameInput.text.toString().trim()
+            val email = emailInput.text.toString().trim()
+            val phone = phoneInput.text.toString().trim()
+            val password = passwordInput.text.toString().trim()
+            val confirmPassword = confirmPasswordInput.text.toString().trim()
 
             if (password != confirmPassword) {
-                Snackbar.make(registerButton, "Passwords do not match", Snackbar.LENGTH_LONG).show()
+                errorText.text = "Passwords do not match"
+                errorText.visibility = View.VISIBLE
                 return@setOnClickListener
             }
 
-            viewModel.registerUser(name, email, password, phone)
+            viewModel.register(name, email, password, phone)
         }
 
         backButton.setOnClickListener {
-            findNavController().popBackStack()
+            findNavController().navigate(R.id.action_registerFragment_to_loginFragment)
         }
-    }
 
-    private fun setupObservers() {
-        viewModel.registerState.observe(viewLifecycleOwner) { state ->
+        viewModel.authState.observe(viewLifecycleOwner) { state ->
             when (state) {
-                is UiState.Loading -> {
+                is AuthState.Loading -> {
                     progressBar.visibility = View.VISIBLE
-                    registerButton.isEnabled = false
                     errorText.visibility = View.GONE
+                    registerButton.isEnabled = false
                 }
-                is UiState.Success -> {
+                is AuthState.RegisterSuccess -> {
                     progressBar.visibility = View.GONE
+                    errorText.visibility = View.GONE
                     registerButton.isEnabled = true
-                    Snackbar.make(registerButton, "Registration successful! Please login.", Snackbar.LENGTH_LONG).show()
+                    // Navigate back to login
                     findNavController().navigate(R.id.action_registerFragment_to_loginFragment)
                 }
-                is UiState.Error -> {
+                is AuthState.Error -> {
                     progressBar.visibility = View.GONE
-                    registerButton.isEnabled = true
                     errorText.text = state.message
                     errorText.visibility = View.VISIBLE
-                    Snackbar.make(registerButton, state.message, Snackbar.LENGTH_LONG).show()
+                    registerButton.isEnabled = true
                 }
-            }
-        }
-
-        viewModel.validationErrors.observe(viewLifecycleOwner) { errors ->
-            errors.forEach { (field, message) ->
-                when (field) {
-                    "name" -> nameInput.error = message
-                    "email" -> emailInput.error = message
-                    "phone" -> phoneInput.error = message
-                    "password" -> passwordInput.error = message
+                else -> {
+                    progressBar.visibility = View.GONE
+                    errorText.visibility = View.GONE
+                    registerButton.isEnabled = true
                 }
             }
         }
     }
 }
-
