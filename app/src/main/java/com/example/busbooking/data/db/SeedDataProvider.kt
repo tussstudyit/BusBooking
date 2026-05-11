@@ -1,6 +1,7 @@
 package com.example.busbooking.data.db
 
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.example.busbooking.utils.PasswordHasher
 
 object SeedDataProvider {
 
@@ -20,8 +21,19 @@ object SeedDataProvider {
     }
 
     private fun seedUsers(db: SupportSQLiteDatabase) {
-        db.execSQL("INSERT INTO users (id, name, email, password, phone, role) VALUES (1, 'Admin', 'admin@bus.com', '123', '0123', 'ADMIN')")
-        db.execSQL("INSERT INTO users (id, name, email, password, phone, role) VALUES (2, 'User A', 'user@gmail.com', '123', '0456', 'USER')")
+        val adminPassword = PasswordHasher.hash("123")
+        val userPassword = PasswordHasher.hash("123")
+
+        db.execSQL(
+            "INSERT INTO users (id, name, email, password, phone, role) VALUES (?, ?, ?, ?, ?, ?)",
+
+            arrayOf<Any?>(1, "Admin", "admin@bus.com", adminPassword, "0123", "ADMIN")
+        )
+        db.execSQL(
+            "INSERT INTO users (id, name, email, password, phone, role) VALUES (?, ?, ?, ?, ?, ?)",
+
+            arrayOf<Any?>(2, "User A", "user@gmail.com", userPassword, "0456", "USER")
+        )
     }
 
     private fun seedRoutes(db: SupportSQLiteDatabase) {

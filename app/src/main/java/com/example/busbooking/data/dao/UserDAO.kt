@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
  *
  * Supports:
  * - Registration: Insert with email uniqueness check
- * - Authentication: Login by email & password
+ * - Authentication: Login by email
  * - Profile: Get/update user info
  * - Admin: List users, change roles, search, block/unblock
  *
@@ -38,10 +38,16 @@ interface UserDAO {
     suspend fun emailExists(email: String): Boolean
 
     /**
-     * Login: Get user by email and password
+     * Login: Get user by email
      */
-    @Query("SELECT * FROM users WHERE email = :email AND password = :password LIMIT 1")
-    suspend fun loginUser(email: String, password: String): User?
+    @Query("SELECT * FROM users WHERE email = :email LIMIT 1")
+    suspend fun getUserByEmail(email: String): User?
+
+    /**
+     * Update user password (hashed)
+     */
+    @Query("UPDATE users SET password = :hashedPassword WHERE id = :userId")
+    suspend fun updatePassword(userId: Long, hashedPassword: String)
 
     // ========================================================================
     // USER PROFILE

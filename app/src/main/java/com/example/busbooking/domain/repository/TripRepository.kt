@@ -6,6 +6,7 @@ import com.example.busbooking.data.entity.Trip
 import com.example.busbooking.data.relations.TripWithRouteAndBus
 import com.example.busbooking.domain.models.Result
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 
 class TripRepository(
@@ -140,6 +141,22 @@ class TripRepository(
             Result.Success(Unit)
         } catch (e: Exception) {
             Result.Error(e, "Error cancelling trip: ${e.message}")
+        }
+    }
+
+    /**
+     * Get all trips (for admin)
+     */
+    suspend fun getAllTrips(): Result<List<TripWithRouteAndBus>> = withContext(Dispatchers.IO) {
+        try {
+            val allTrips = tripDAO.getAllTrips().first()
+            if (allTrips.isNotEmpty()) {
+                Result.Success(allTrips)
+            } else {
+                Result.Error(Exception("Empty"), "No trips found")
+            }
+        } catch (e: Exception) {
+            Result.Error(e, "Error fetching all trips: ${e.message}")
         }
     }
 }

@@ -3,6 +3,7 @@ package com.example.busbooking.domain.repository
 import com.example.busbooking.data.dao.UserDAO
 import com.example.busbooking.data.entity.User
 import com.example.busbooking.domain.models.Result
+import com.example.busbooking.utils.PasswordHasher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -59,7 +60,7 @@ class AuthRepository(private val userDAO: UserDAO) : IAuthRepository {
             }
 
             // In production: hash password using BCrypt or Argon2
-            val hashedPassword = password // TODO: Implement password hashing
+            val hashedPassword = PasswordHasher.hash(password)
 
             val user = User(
                 name = name,
@@ -98,8 +99,8 @@ class AuthRepository(private val userDAO: UserDAO) : IAuthRepository {
      */
     override suspend fun loginUser(email: String, password: String): Result<User> = withContext(Dispatchers.IO) {
         try {
-            // Query user by email and password
-            val user = userDAO.loginUser(email, password)
+            // Query user by email
+            val user = userDAO.getUserByEmail(email)
 
             return@withContext if (user != null) {
                 if (user.isBlocked) {
@@ -108,7 +109,25 @@ class AuthRepository(private val userDAO: UserDAO) : IAuthRepository {
                         "Your account has been blocked by admin"
                     )
                 } else {
-                    Result.Success(user)
+                    val storedPassword = user.password
+                    val isVerified = if (PasswordHasher.isBcryptHash(storedPassword)) {
+                        PasswordHasher.verify(password, storedPassword)
+                    } else {
+                        storedPassword == password
+                    }
+
+                    if (isVerified) {
+                        if (!PasswordHasher.isBcryptHash(storedPassword)) {
+                            val upgradedHash = PasswordHasher.hash(password)
+                            userDAO.updatePassword(user.id, upgradedHash)
+                        }
+                        Result.Success(user)
+                    } else {
+                        Result.Error(
+                            Exception("Invalid credentials"),
+                            "Email or password is incorrect"
+                        )
+                    }
                 }
             } else {
                 Result.Error(
@@ -117,7 +136,7 @@ class AuthRepository(private val userDAO: UserDAO) : IAuthRepository {
                 )
             }
         } catch (e: Exception) {
-            Result.Error(e, "Login error: ${e.message}")
+            Result.Error(e, "Login error: ${'$'}{e.message}")
         }
     }
 
@@ -169,4 +188,3 @@ class AuthRepository(private val userDAO: UserDAO) : IAuthRepository {
         }
     }
 }
-

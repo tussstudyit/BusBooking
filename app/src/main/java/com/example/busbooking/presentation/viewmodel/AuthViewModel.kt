@@ -4,9 +4,9 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.busbooking.data.session.SessionManager
 import com.example.busbooking.domain.repository.AuthRepository
 import com.example.busbooking.presentation.ui.state.AuthState
+import com.example.busbooking.utils.SessionManager
 import kotlinx.coroutines.launch
 
 class AuthViewModel(
