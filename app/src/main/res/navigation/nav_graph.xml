@@ -252,7 +252,7 @@
         <argument
             android:name="routeId"
             app:argType="long"
-            android:defaultValue="-1" />
+            android:defaultValue="-1L" />
     </fragment>
 
     <!-- ═══════════════════════════════════════════════════════════════════════
@@ -278,7 +278,7 @@
         <argument
             android:name="busId"
             app:argType="long"
-            android:defaultValue="-1" />
+            android:defaultValue="-1L" />
     </fragment>
 
     <fragment
@@ -310,7 +310,7 @@
         <argument
             android:name="tripId"
             app:argType="long"
-            android:defaultValue="-1" />
+            android:defaultValue="-1L" />
     </fragment>
 
 </navigation>

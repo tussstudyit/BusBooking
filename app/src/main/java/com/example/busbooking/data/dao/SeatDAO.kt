@@ -24,6 +24,9 @@ interface SeatDAO {
     @Query("DELETE FROM seats WHERE busId = :busId")
     suspend fun deleteSeatsForBus(busId: Long)
 
+    @Query("SELECT * FROM seats WHERE busId = :busId")
+    suspend fun getSeatsByBusId(busId: Long): List<Seat>
+
     // ================= BASIC =================
 
     @Query("""

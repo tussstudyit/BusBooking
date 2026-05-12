@@ -60,11 +60,23 @@ class SeatSelectionViewModel(
         }
 
         viewModelScope.launch {
+
             when (val result = ticketRepository.bookTicket(userId, tripId, seat.id)) {
-                is BookingResult.Success      -> _bookingResult.value = result.ticketId
-                is BookingResult.AlreadyBooked -> _error.value = "Ghế vừa được người khác đặt, vui lòng chọn ghế khác"
-                is BookingResult.InvalidSeat  -> _error.value = "Ghế không hợp lệ"
-                is BookingResult.Failure      -> _error.value = "Đặt vé thất bại, vui lòng thử lại"
+
+                is BookingResult.Success ->
+                    _bookingResult.value = result.ticketId
+
+                is BookingResult.AlreadyBooked ->
+                    _error.value = "Ghế vừa được người khác đặt, vui lòng chọn ghế khác"
+
+                is BookingResult.InvalidSeat ->
+                    _error.value = "Ghế không hợp lệ"
+
+                is BookingResult.InvalidTrip ->
+                    _error.value = "Chuyến đi không hợp lệ"
+
+                is BookingResult.Failure ->
+                    _error.value = "Đặt vé thất bại, vui lòng thử lại"
             }
         }
     }

@@ -14,8 +14,12 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.busbooking.R
+import com.example.busbooking.data.db.BusBookingDatabase
+import com.example.busbooking.domain.repository.RouteRepository
+import com.example.busbooking.domain.repository.UserRepository
 import com.example.busbooking.presentation.ui.state.AdminState
 import com.example.busbooking.presentation.viewmodel.AdminViewModel
+import com.example.busbooking.presentation.viewmodel.ViewModelFactory
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -24,8 +28,15 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 class RouteListAdminFragment : Fragment() {
 
-    private val viewModel: AdminViewModel by viewModels()
-
+    private val viewModel: AdminViewModel by viewModels {
+        val db = BusBookingDatabase.getInstance(requireContext())
+        ViewModelFactory {
+            AdminViewModel(
+                UserRepository(db.userDao()),
+                RouteRepository(db.routeDao())
+            )
+        }
+    }
     private lateinit var recyclerView: RecyclerView
     private lateinit var progressBar: ProgressBar
     private lateinit var emptyText: TextView
@@ -96,8 +107,15 @@ class RouteListAdminFragment : Fragment() {
 
 class RouteFormAdminFragment : Fragment() {
 
-    private val viewModel: AdminViewModel by viewModels()
-
+    private val viewModel: AdminViewModel by viewModels {
+        val db = BusBookingDatabase.getInstance(requireContext())
+        ViewModelFactory {
+            AdminViewModel(
+                UserRepository(db.userDao()),
+                RouteRepository(db.routeDao())
+            )
+        }
+    }
     private lateinit var originInput: EditText
     private lateinit var destinationInput: EditText
     private lateinit var distanceInput: EditText

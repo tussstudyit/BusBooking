@@ -86,21 +86,21 @@ class AuthRepository(private val userDAO: UserDAO) : IAuthRepository {
         }
     }
 
-    /**
-     * Login user
-     *
-     * Process:
-     * 1. Query user by email
-     * 2. Verify password (in real app: compare hashed)
-     * 3. Return user object if credentials match
-     * 4. Return error if not found or password mismatch
-     *
-     * @return Result with User if success, Error if failure
-     */
-    override suspend fun loginUser(email: String, password: String): Result<User> = withContext(Dispatchers.IO) {
-        try {
-            // Query user by email
-            val user = userDAO.getUserByEmail(email)
+     /**
+      * Login user
+      *
+      * Process:
+      * 1. Query user by phone
+      * 2. Verify password (in real app: compare hashed)
+      * 3. Return user object if credentials match
+      * 4. Return error if not found or password mismatch
+      *
+      * @return Result with User if success, Error if failure
+      */
+     override suspend fun loginUser(email: String, password: String): Result<User> = withContext(Dispatchers.IO) {
+         try {
+             // Query user by phone
+             val user = userDAO.getUserByPhone(email)
 
             return@withContext if (user != null) {
                 if (user.isBlocked) {
@@ -125,14 +125,14 @@ class AuthRepository(private val userDAO: UserDAO) : IAuthRepository {
                     } else {
                         Result.Error(
                             Exception("Invalid credentials"),
-                            "Email or password is incorrect"
+                            "Phone or password is incorrect"
                         )
                     }
                 }
             } else {
                 Result.Error(
                     Exception("Invalid credentials"),
-                    "Email or password is incorrect"
+                    "Phone or password is incorrect"
                 )
             }
         } catch (e: Exception) {

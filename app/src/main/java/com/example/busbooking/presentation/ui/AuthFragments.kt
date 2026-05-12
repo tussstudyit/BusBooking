@@ -1,6 +1,7 @@
 package com.example.busbooking.presentation.ui
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,14 +11,20 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.busbooking.R
+import com.example.busbooking.data.db.BusBookingDatabase
+import com.example.busbooking.domain.repository.AuthRepository
 import com.example.busbooking.presentation.ui.state.AuthState
 import com.example.busbooking.presentation.viewmodel.AuthViewModel
 import com.example.busbooking.utils.SessionManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. SplashFragment — Kiểm tra session rồi điều hướng
@@ -35,8 +42,12 @@ class SplashFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         viewLifecycleOwner.lifecycleScope.launch {
-            delay(2000)
-            navigateBasedOnSession()
+            try {
+                delay(2000)
+                navigateBasedOnSession()
+            } catch (e: Exception) {
+                Log.e("SplashFragment", "Error: ${e.message}", e)
+            }
         }
     }
 
@@ -60,9 +71,13 @@ class SplashFragment : Fragment() {
 
 class LoginFragment : Fragment() {
 
-    private val viewModel: AuthViewModel by viewModels()
+    private val viewModel: AuthViewModel by viewModels {
+        val db = BusBookingDatabase.getInstance(requireContext())
+        val repo = AuthRepository(db.userDao())
+        AuthViewModel.factory(repo)
+    }
 
-    private lateinit var emailInput: EditText
+    private lateinit var phoneInput: EditText
     private lateinit var passwordInput: EditText
     private lateinit var loginButton: Button
     private lateinit var registerButton: Button
@@ -77,7 +92,7 @@ class LoginFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        emailInput    = view.findViewById(R.id.emailInput)
+        phoneInput    = view.findViewById(R.id.phoneInput)
         passwordInput = view.findViewById(R.id.passwordInput)
         loginButton   = view.findViewById(R.id.loginButton)
         registerButton = view.findViewById(R.id.registerButton)
@@ -85,13 +100,13 @@ class LoginFragment : Fragment() {
         errorText     = view.findViewById(R.id.errorText)
 
         loginButton.setOnClickListener {
-            val email    = emailInput.text.toString().trim()
+            val phone    = phoneInput.text.toString().trim()
             val password = passwordInput.text.toString().trim()
-            if (email.isBlank() || password.isBlank()) {
-                showError("Vui lòng nhập email và mật khẩu")
+            if (phone.isBlank() || password.isBlank()) {
+                showError("Vui lòng nhập số điện thoại và mật khẩu")
                 return@setOnClickListener
             }
-            viewModel.login(email, password)
+            viewModel.login(phone, password)
         }
 
         registerButton.setOnClickListener {
@@ -137,6 +152,16 @@ class LoginFragment : Fragment() {
         errorText.text       = message
         errorText.visibility = View.VISIBLE
     }
+    companion object {
+        fun factory(authRepository: AuthRepository): ViewModelProvider.Factory {
+            return object : ViewModelProvider.Factory {
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    @Suppress("UNCHECKED_CAST")
+                    return AuthViewModel(authRepository) as T
+                }
+            }
+        }
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -145,7 +170,11 @@ class LoginFragment : Fragment() {
 
 class RegisterFragment : Fragment() {
 
-    private val viewModel: AuthViewModel by viewModels()
+    private val viewModel: AuthViewModel by viewModels {
+        val db = BusBookingDatabase.getInstance(requireContext())
+        val repo = AuthRepository(db.userDao())
+        AuthViewModel.factory(repo)
+    }
 
     private lateinit var nameInput: EditText
     private lateinit var emailInput: EditText

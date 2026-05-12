@@ -11,15 +11,16 @@ object SessionManager {
     private const val KEY_LOGIN_TIME = "login_time"
 
     private lateinit var prefs: android.content.SharedPreferences
-    var currentUser: User? = null
-        private set
+    private var _currentUser: User? = null
+
+    fun getCurrentUser(): User? = _currentUser
 
     fun initialize(context: Context) {
         prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     }
 
     fun saveSession(user: User) {
-        currentUser = user
+        _currentUser = user
         prefs.edit().apply {
             putLong(KEY_USER_ID, user.id)
             putString(KEY_EMAIL, user.email)
@@ -46,14 +47,14 @@ object SessionManager {
     }
 
     fun clearSession() {
-        currentUser = null
+        _currentUser = null
         prefs.edit().clear().apply()
     }
 
     fun restoreSession(): Boolean {
         val userId = prefs.getLong(KEY_USER_ID, -1L)
         return if (userId != -1L) {
-            currentUser = User(
+            _currentUser = User(
                 id = userId,
                 name = "",
                 email = getCurrentUserEmail(),
@@ -67,4 +68,3 @@ object SessionManager {
         }
     }
 }
-

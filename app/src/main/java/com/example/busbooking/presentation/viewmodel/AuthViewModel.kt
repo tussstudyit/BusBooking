@@ -3,6 +3,7 @@ package com.example.busbooking.presentation.viewmodel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.busbooking.domain.repository.AuthRepository
 import com.example.busbooking.presentation.ui.state.AuthState
@@ -16,16 +17,16 @@ class AuthViewModel(
     private val _authState = MutableLiveData<AuthState>(AuthState.Idle)
     val authState: LiveData<AuthState> = _authState
 
-    fun login(email: String, password: String) {
-        if (email.isBlank() || password.isBlank()) {
-            _authState.value = AuthState.Error("Please fill all fields")
-            return
-        }
+     fun login(phone: String, password: String) {
+         if (phone.isBlank() || password.isBlank()) {
+             _authState.value = AuthState.Error("Please fill all fields")
+             return
+         }
 
-        _authState.value = AuthState.Loading
+         _authState.value = AuthState.Loading
 
-        viewModelScope.launch {
-            when (val result = authRepository.loginUser(email, password)) {
+         viewModelScope.launch {
+             when (val result = authRepository.loginUser(phone, password)) {
                 is com.example.busbooking.domain.models.Result.Success -> {
                     SessionManager.saveSession(result.data)
                     _authState.value = AuthState.LoginSuccess(result.data)
@@ -65,5 +66,15 @@ class AuthViewModel(
 
     fun resetState() {
         _authState.value = AuthState.Idle
+    }
+    companion object {
+        fun factory(authRepository: AuthRepository): ViewModelProvider.Factory {
+            return object : ViewModelProvider.Factory {
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    @Suppress("UNCHECKED_CAST")
+                    return AuthViewModel(authRepository) as T
+                }
+            }
+        }
     }
 }

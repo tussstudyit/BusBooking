@@ -2,8 +2,6 @@ package com.example.busbooking.presentation.ui
 
 import android.app.DatePickerDialog
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -19,11 +17,15 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.NavOptions
 import androidx.navigation.fragment.findNavController
-import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.busbooking.R
+import com.example.busbooking.data.db.BusBookingDatabase
+import com.example.busbooking.domain.repository.AuthRepository
+import com.example.busbooking.domain.repository.RouteRepository
+import com.example.busbooking.domain.repository.SeatRepository
+import com.example.busbooking.domain.repository.TicketRepository
 import com.example.busbooking.presentation.adapter.SeatAdapter
 import com.example.busbooking.presentation.ui.state.BookingState
 import com.example.busbooking.presentation.ui.state.UserState
@@ -33,27 +35,33 @@ import com.example.busbooking.presentation.viewmodel.RouteSearchViewModel
 import com.example.busbooking.presentation.viewmodel.SeatSelectionViewModel
 import com.example.busbooking.presentation.viewmodel.UserProfileViewModel
 import com.example.busbooking.presentation.viewmodel.UserViewModel
+import com.example.busbooking.presentation.viewmodel.ViewModelFactory
 import com.example.busbooking.utils.SessionManager
 import java.text.SimpleDateFormat
 import java.util.*
 
 // ─────────────────────────────────────────────────────────────────────────────
 // BASE: Tái sử dụng UI loading/empty/error + RecyclerView chung cho ticket list
+// internal thay vì private để subclass public có thể kế thừa
 // ─────────────────────────────────────────────────────────────────────────────
 
-private abstract class BaseTicketListFragment : Fragment() {
+internal abstract class BaseTicketListFragment : Fragment() {
 
-    protected val viewModel: UserViewModel by viewModels()
-
+    protected val viewModel: UserViewModel by viewModels {
+        val db = BusBookingDatabase.getInstance(requireContext())
+        ViewModelFactory {
+            UserViewModel(
+                AuthRepository(db.userDao()),
+                TicketRepository(db.ticketDao(), db.seatDao())
+            )
+        }
+    }
     protected lateinit var recyclerView: RecyclerView
     protected lateinit var progressBar: ProgressBar
     protected lateinit var emptyText: TextView
     protected lateinit var errorText: TextView
 
-    /** Mỗi subclass cung cấp layout ID riêng */
     abstract val layoutResId: Int
-
-    /** ID của RecyclerView trong layout */
     abstract val recyclerViewId: Int
 
     override fun onCreateView(
@@ -73,20 +81,17 @@ private abstract class BaseTicketListFragment : Fragment() {
 
         viewModel.userState.observe(viewLifecycleOwner) { state ->
             when (state) {
-                is UserState.Loading -> showLoading()
+                is UserState.Loading       -> showLoading()
                 is UserState.TicketsLoaded -> onTicketsLoaded(state)
-                is UserState.Error -> showError(state.message)
-                else -> progressBar.visibility = View.GONE
+                is UserState.Error         -> showError(state.message)
+                else                       -> progressBar.visibility = View.GONE
             }
         }
 
         viewModel.loadMyTickets()
     }
 
-    /** Subclass override để filter/bind adapter theo nghiệp vụ riêng */
     abstract fun onTicketsLoaded(state: UserState.TicketsLoaded)
-
-    // ── Helpers UI ────────────────────────────────────────────────────────────
 
     private fun showLoading() {
         progressBar.visibility  = View.VISIBLE
@@ -119,10 +124,11 @@ private abstract class BaseTicketListFragment : Fragment() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 1. MyTicketsFragment — Vé đang active, có thể navigate đến chi tiết
+// 1. MyTicketsFragment
 // ─────────────────────────────────────────────────────────────────────────────
 
-class MyTicketsFragment : BaseTicketListFragment() {
+// Dòng 117
+internal class MyTicketsFragment : BaseTicketListFragment() {
 
     override val layoutResId    = R.layout.fragment_my_tickets
     override val recyclerViewId = R.id.ticketsRecyclerView
@@ -134,19 +140,20 @@ class MyTicketsFragment : BaseTicketListFragment() {
             showList()
             // TODO: set adapter
             // recyclerView.adapter = TicketAdapter(state.tickets) { ticket ->
-            //     val action = MyTicketsFragmentDirections
-            //         .actionMyTicketsFragmentToTicketDetailsFragment(ticket.ticket.id)
-            //     findNavController().navigate(action)
+            //     val bundle = Bundle().apply { putLong("ticketId", ticket.ticket.id) }
+            //     findNavController().navigate(
+            //         R.id.action_myTicketsFragment_to_ticketDetailsFragment, bundle)
             // }
         }
     }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 2. BookingHistoryFragment — Toàn bộ lịch sử, kể cả vé đã hủy (read-only)
+// 2. BookingHistoryFragment
 // ─────────────────────────────────────────────────────────────────────────────
 
-class BookingHistoryFragment : BaseTicketListFragment() {
+// Dòng 141
+internal class BookingHistoryFragment : BaseTicketListFragment() {
 
     override val layoutResId    = R.layout.fragment_booking_history
     override val recyclerViewId = R.id.historyRecyclerView
@@ -156,21 +163,30 @@ class BookingHistoryFragment : BaseTicketListFragment() {
             showEmpty()
         } else {
             showList()
-            // TODO: set adapter — hiển thị tất cả lịch sử, kể cả đã hủy
-            // recyclerView.adapter = TicketAdapter(state.tickets)
+            // TODO: set adapter
         }
     }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 3. TicketDetailsFragment — Chi tiết 1 vé + hủy vé
-//    (Dùng BookingViewModel riêng nên không extend base)
+// 3. TicketDetailsFragment — nhận ticketId qua arguments (không dùng Safe Args)
 // ─────────────────────────────────────────────────────────────────────────────
 
 class TicketDetailsFragment : Fragment() {
 
-    private val viewModel: BookingViewModel by viewModels()
-    private val args: TicketDetailsFragmentArgs by navArgs()
+    private val viewModel: BookingViewModel by viewModels {
+        val db = BusBookingDatabase.getInstance(requireContext())
+        ViewModelFactory {
+            BookingViewModel(
+                SeatRepository(db.seatDao()),
+                TicketRepository(db.ticketDao(), db.seatDao())
+            )
+        }
+    }
+    // Đọc ticketId từ Bundle thay vì navArgs() để tránh lỗi Safe Args
+    private val ticketId: Long by lazy {
+        arguments?.getLong("ticketId", -1L) ?: -1L
+    }
 
     private lateinit var progressBar: ProgressBar
     private lateinit var errorText: TextView
@@ -188,6 +204,12 @@ class TicketDetailsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        if (ticketId == -1L) {
+            Toast.makeText(requireContext(), "Vé không hợp lệ", Toast.LENGTH_SHORT).show()
+            findNavController().popBackStack()
+            return
+        }
 
         progressBar  = view.findViewById(R.id.progressBar)
         errorText    = view.findViewById(R.id.errorText)
@@ -221,19 +243,27 @@ class TicketDetailsFragment : Fragment() {
             }
         }
 
-        viewModel.loadTicket(args.ticketId)
+        viewModel.loadTicket(ticketId)
     }
 
     private fun bindTicket(state: BookingState.TicketLoaded) {
         progressBar.visibility = View.GONE
         errorText.visibility   = View.GONE
 
-        val ticket = state.ticket
-        routeText.text  = "${ticket.originCity} → ${ticket.destinationCity}"
-        dateText.text   = ticket.tripDate.toString()
-        seatText.text   = "Ghế: ${ticket.seatNumber}"
+        // TicketLoaded chứa TicketDetails — truy cập qua các relation
+        val details = state.ticket                          // TicketDetails
+        val ticket  = details.ticket                        // Ticket entity
+        val trip    = details.tripWithRouteAndBus.trip      // Trip
+        val route   = details.tripWithRouteAndBus.route     // Route
+        val seat    = details.seat                          // Seat
+
+        val dateFmt = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+
+        routeText.text  = "${route.origin} → ${route.destination}"
+        dateText.text   = dateFmt.format(Date(trip.tripDate))
+        seatText.text   = "Ghế: ${seat.seatNumber}"
         statusText.text = "Trạng thái: ${ticket.status}"
-        priceText.text  = "Giá: ${ticket.price} VNĐ"
+        priceText.text  = "Giá: ${String.format("%,.0f", trip.price)} VNĐ"
 
         val cancellable = ticket.status == "CONFIRMED" || ticket.status == "PENDING"
         cancelButton.isEnabled  = cancellable
@@ -244,14 +274,14 @@ class TicketDetailsFragment : Fragment() {
         AlertDialog.Builder(requireContext())
             .setTitle("Hủy vé")
             .setMessage("Bạn có chắc muốn hủy vé này không?")
-            .setPositiveButton("Hủy vé") { _, _ -> viewModel.cancelTicket(args.ticketId) }
+            .setPositiveButton("Hủy vé") { _, _ -> viewModel.cancelTicket(ticketId) }
             .setNegativeButton("Không", null)
             .show()
     }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 4. UserDashboardFragment — Màn hình chính của user, điều hướng các chức năng
+// 4. UserDashboardFragment
 // ─────────────────────────────────────────────────────────────────────────────
 
 class UserDashboardFragment : Fragment() {
@@ -289,12 +319,17 @@ class UserDashboardFragment : Fragment() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 5. UserProfileFragment — Xem và chỉnh sửa thông tin cá nhân + đăng xuất
+// 5. UserProfileFragment
 // ─────────────────────────────────────────────────────────────────────────────
 
 class UserProfileFragment : Fragment() {
 
-    private val viewModel: UserProfileViewModel by viewModels()
+    private val viewModel: UserProfileViewModel by viewModels {
+        val db = BusBookingDatabase.getInstance(requireContext())
+        ViewModelFactory {
+            UserProfileViewModel(AuthRepository(db.userDao()))
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -315,7 +350,7 @@ class UserProfileFragment : Fragment() {
             nameInput.setText(user.name)
             emailInput.setText(user.email)
             phoneInput.setText(user.phone)
-            emailInput.isEnabled = false // Email không cho sửa
+            emailInput.isEnabled = false
         }
 
         viewModel.updateResult.observe(viewLifecycleOwner) { success ->
@@ -340,9 +375,7 @@ class UserProfileFragment : Fragment() {
         logoutButton.setOnClickListener {
             SessionManager.clearSession()
             findNavController().navigate(
-                R.id.loginFragment,
-                null,
-                NavOptions.Builder().setPopUpTo(R.id.userDashboardFragment, true).build()
+                R.id.action_userProfileFragment_to_loginFragment
             )
         }
 
@@ -351,13 +384,17 @@ class UserProfileFragment : Fragment() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 6. RouteSearchFragment — Tìm kiếm tuyến đường theo điểm đi, đến và ngày
+// 6. RouteSearchFragment
 // ─────────────────────────────────────────────────────────────────────────────
 
 class RouteSearchFragment : Fragment() {
 
-    private val viewModel: RouteSearchViewModel by viewModels()
-
+    private val viewModel: RouteSearchViewModel by viewModels {
+        val db = BusBookingDatabase.getInstance(requireContext())
+        ViewModelFactory {
+            RouteSearchViewModel(RouteRepository(db.routeDao()))
+        }
+    }
     private lateinit var originInput: AutoCompleteTextView
     private lateinit var destinationInput: AutoCompleteTextView
     private lateinit var dateButton: Button
@@ -379,14 +416,13 @@ class RouteSearchFragment : Fragment() {
         searchButton     = view.findViewById(R.id.searchButton)
 
         updateDateLabel()
-
         dateButton.setOnClickListener { showDatePicker() }
 
         searchButton.setOnClickListener {
             val origin      = originInput.text.toString().trim()
             val destination = destinationInput.text.toString().trim()
             if (origin.isEmpty() || destination.isEmpty()) {
-                Toast.makeText(requireContext(), "Please enter origin and destination", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Vui lòng nhập điểm đi và điểm đến", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             val bundle = Bundle().apply {
@@ -398,13 +434,15 @@ class RouteSearchFragment : Fragment() {
         }
 
         viewModel.origins.observe(viewLifecycleOwner) { origins ->
-            val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, origins)
-            originInput.setAdapter(adapter)
+            originInput.setAdapter(
+                ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, origins)
+            )
         }
 
         viewModel.destinations.observe(viewLifecycleOwner) { destinations ->
-            val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, destinations)
-            destinationInput.setAdapter(adapter)
+            destinationInput.setAdapter(
+                ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, destinations)
+            )
         }
 
         viewModel.loadLocations()
@@ -420,13 +458,12 @@ class RouteSearchFragment : Fragment() {
     }
 
     private fun updateDateLabel() {
-        val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-        dateButton.text = sdf.format(Date(selectedDate))
+        dateButton.text = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date(selectedDate))
     }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 7. SeatSelectionFragment — Chọn ghế cho chuyến đi, xác nhận đặt vé
+// 7. SeatSelectionFragment
 // ─────────────────────────────────────────────────────────────────────────────
 
 class SeatSelectionFragment : Fragment() {
@@ -443,7 +480,7 @@ class SeatSelectionFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        tripId = arguments?.getLong("tripId") ?: -1L
+        tripId = arguments?.getLong("tripId", -1L) ?: -1L
         if (tripId == -1L) {
             Toast.makeText(requireContext(), "Invalid trip", Toast.LENGTH_SHORT).show()
             findNavController().popBackStack()
@@ -454,6 +491,7 @@ class SeatSelectionFragment : Fragment() {
         val selectedSeatText: TextView      = view.findViewById(R.id.selectedSeatText)
         val confirmButton: Button           = view.findViewById(R.id.confirmButton)
 
+        // SeatAdapter nhận callback khi user chọn ghế
         adapter = SeatAdapter { seat -> viewModel.selectSeat(seat) }
 
         seatsRecyclerView.layoutManager = GridLayoutManager(requireContext(), 4)
@@ -464,12 +502,13 @@ class SeatSelectionFragment : Fragment() {
         }
 
         viewModel.selectedSeat.observe(viewLifecycleOwner) { seat ->
-            selectedSeatText.text = if (seat != null) "Selected: ${seat.seatNumber}" else "No seat selected"
+            adapter.setSelectedSeat(seat)
+            selectedSeatText.text = if (seat != null) "Đã chọn: ${seat.seatNumber}" else "Chưa chọn ghế"
         }
 
-        viewModel.bookingResult.observe(viewLifecycleOwner) { ticketId ->
-            ticketId ?: return@observe
-            val bundle = Bundle().apply { putLong("ticketId", ticketId) }
+        viewModel.bookingResult.observe(viewLifecycleOwner) { newTicketId ->
+            newTicketId ?: return@observe
+            val bundle = Bundle().apply { putLong("ticketId", newTicketId) }
             findNavController().navigate(R.id.action_seatSelectionFragment_to_bookingConfirmationFragment, bundle)
         }
 
@@ -480,7 +519,7 @@ class SeatSelectionFragment : Fragment() {
 
         confirmButton.setOnClickListener {
             if (viewModel.selectedSeat.value == null) {
-                Toast.makeText(requireContext(), "Please select a seat", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Vui lòng chọn ghế", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             viewModel.bookSeat(tripId)
@@ -491,7 +530,7 @@ class SeatSelectionFragment : Fragment() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 8. BookingConfirmationFragment — Hiển thị thông tin vé sau khi đặt thành công
+// 8. BookingConfirmationFragment
 // ─────────────────────────────────────────────────────────────────────────────
 
 class BookingConfirmationFragment : Fragment() {
@@ -506,7 +545,7 @@ class BookingConfirmationFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val ticketId = arguments?.getLong("ticketId") ?: -1L
+        val ticketId = arguments?.getLong("ticketId", -1L) ?: -1L
         if (ticketId == -1L) {
             Toast.makeText(requireContext(), "Invalid ticket", Toast.LENGTH_SHORT).show()
             findNavController().popBackStack()
@@ -523,14 +562,20 @@ class BookingConfirmationFragment : Fragment() {
 
         val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
 
-        viewModel.ticket.observe(viewLifecycleOwner) { ticket ->
-            ticket ?: return@observe
-            ticketIdText.text    = "Ticket #${ticket.ticket.id}"
-            routeText.text       = "${ticket.route.origin} → ${ticket.route.destination}"
-            seatText.text        = "Seat: ${ticket.seat.seatNumber}"
-            priceText.text       = "Price: ${String.format("%,.0f", ticket.trip.price)} VND"
-            statusText.text      = "Status: ${ticket.ticket.status}"
-            bookingTimeText.text = "Booked: ${sdf.format(Date(ticket.ticket.bookingTime))}"
+        viewModel.ticket.observe(viewLifecycleOwner) { details ->
+            details ?: return@observe
+            // details là TicketDetails — truy cập qua các relation
+            val ticket = details.ticket
+            val route  = details.tripWithRouteAndBus.route
+            val trip   = details.tripWithRouteAndBus.trip
+            val seat   = details.seat
+
+            ticketIdText.text    = "Vé #${ticket.id}"
+            routeText.text       = "${route.origin} → ${route.destination}"
+            seatText.text        = "Ghế: ${seat.seatNumber}"
+            priceText.text       = "Giá: ${String.format("%,.0f", trip.price)} VNĐ"
+            statusText.text      = "Trạng thái: ${ticket.status}"
+            bookingTimeText.text = "Đặt lúc: ${sdf.format(Date(ticket.bookingTime))}"
         }
 
         viewTicketsButton.setOnClickListener {

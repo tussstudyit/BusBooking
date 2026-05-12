@@ -8,4 +8,28 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="md_theme_primary">#6750A4</color>
+    <color name="seat_available">#4CAF50</color>
+    <color name="seat_booked">#F44336</color>
+    <color name="seat_selected">#2196F3</color>
+
+    <!-- BusBooking Blue Theme -->
+    <color name="blue_primary">#1565C0</color>
+    <color name="blue_primary_dark">#0D47A1</color>
+    <color name="blue_primary_light">#1E88E5</color>
+    <color name="blue_accent">#2196F3</color>
+
+    <!-- Background & Surface -->
+    <color name="background_white">#FFFFFF</color>
+    <color name="surface_blue_light">#F8FAFF</color>
+    <color name="divider_blue">#E3EAF6</color>
+
+    <!-- Text -->
+    <color name="text_primary">#0A1A2F</color>
+    <color name="text_secondary">#607D8B</color>
+    <color name="text_on_primary">#FFFFFF</color>
+
+    <!-- Status -->
+    <color name="error">#D32F2F</color>
+    <color name="success">#388E3C</color>
+    <color name="disabled">#BDBDBD</color>
 </resources>

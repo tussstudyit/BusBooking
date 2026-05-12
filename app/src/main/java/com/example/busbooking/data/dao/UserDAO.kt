@@ -44,6 +44,12 @@ interface UserDAO {
     suspend fun getUserByEmail(email: String): User?
 
     /**
+     * Login: Get user by phone
+     */
+    @Query("SELECT * FROM users WHERE phone = :phone LIMIT 1")
+    suspend fun getUserByPhone(phone: String): User?
+
+    /**
      * Update user password (hashed)
      */
     @Query("UPDATE users SET password = :hashedPassword WHERE id = :userId")

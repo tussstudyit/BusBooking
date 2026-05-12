@@ -17,10 +17,16 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.busbooking.R
+import com.example.busbooking.data.db.BusBookingDatabase
+import com.example.busbooking.domain.repository.AuthRepository
+import com.example.busbooking.domain.repository.RouteRepository
+import com.example.busbooking.domain.repository.TicketRepository
+import com.example.busbooking.domain.repository.UserRepository
 import com.example.busbooking.presentation.ui.state.AdminState
 import com.example.busbooking.presentation.ui.state.UserState
 import com.example.busbooking.presentation.viewmodel.AdminViewModel
 import com.example.busbooking.presentation.viewmodel.UserViewModel
+import com.example.busbooking.presentation.viewmodel.ViewModelFactory
 import com.example.busbooking.utils.SessionManager
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -100,8 +106,15 @@ class TicketListAdminFragment : Fragment() {
 
 class UserListAdminFragment : Fragment() {
 
-    private val viewModel: AdminViewModel by viewModels()
-
+    private val viewModel: AdminViewModel by viewModels {
+        val db = BusBookingDatabase.getInstance(requireContext())
+        ViewModelFactory {
+            AdminViewModel(
+                UserRepository(db.userDao()),
+                RouteRepository(db.routeDao())
+            )
+        }
+    }
     private lateinit var searchInput: EditText
     private lateinit var recyclerView: RecyclerView
     private lateinit var progressBar: ProgressBar
@@ -211,8 +224,15 @@ class AnalyticsFragment : Fragment() {
 
 class AdminProfileFragment : Fragment() {
 
-    private val viewModel: UserViewModel by viewModels()
-
+    private val viewModel: UserViewModel by viewModels {
+        val db = BusBookingDatabase.getInstance(requireContext())
+        ViewModelFactory {
+            UserViewModel(
+                AuthRepository(db.userDao()),
+                TicketRepository(db.ticketDao(), db.seatDao())
+            )
+        }
+    }
     private lateinit var nameText: TextView
     private lateinit var emailText: TextView
     private lateinit var phoneText: TextView

@@ -114,4 +114,23 @@ class BusRepository(private val busDAO: BusDAO) {
                 Result.Error(e, "Error deactivating bus: ${e.message}")
             }
         }
+    suspend fun updateBus(
+        busId: Long,
+        busName: String,
+        totalSeats: Int,
+        licensePlate: String
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val bus = Bus(
+                id = busId,
+                busName = busName,
+                totalSeats = totalSeats,
+                licensePlate = licensePlate
+            )
+            busDAO.updateBus(bus)
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            Result.Error(e, "Error updating bus: ${e.message}")
+        }
+    }
 }

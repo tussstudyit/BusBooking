@@ -39,7 +39,7 @@ class BusViewModel(
             when (val result = busRepository.getAllBuses()) {
                 is Result.Success -> _busState.value = BusState.BusesLoaded(result.data)
                 is Result.Error   -> _busState.value = BusState.Error(result.message)
-                else              -> _busState.value = BusState.Error("Đã xảy ra lỗi")
+                is Result.Loading -> { }
             }
         }
     }
@@ -54,7 +54,7 @@ class BusViewModel(
             when (val result = busRepository.createBus(busName, totalSeats, licensePlate)) {
                 is Result.Success -> _busState.value = BusState.ActionSuccess("Đã tạo xe thành công")
                 is Result.Error   -> _busState.value = BusState.Error(result.message)
-                else              -> _busState.value = BusState.Error("Tạo xe thất bại")
+                is Result.Loading -> { }
             }
         }
     }
@@ -64,23 +64,35 @@ class BusViewModel(
             _busState.value = BusState.Error("Vui lòng điền đầy đủ thông tin hợp lệ")
             return
         }
+
         _busState.value = BusState.Loading
+
         viewModelScope.launch {
             when (val result = busRepository.updateBus(busId, busName, totalSeats, licensePlate)) {
-                is Result.Success -> _busState.value = BusState.ActionSuccess("Đã cập nhật xe")
-                is Result.Error   -> _busState.value = BusState.Error(result.message)
-                else              -> _busState.value = BusState.Error("Cập nhật thất bại")
+                is Result.Success -> _busState.value =
+                    BusState.ActionSuccess("Đã cập nhật xe")
+
+                is Result.Error -> _busState.value =
+                    BusState.Error(result.message)
+
+                is Result.Loading -> { }
             }
         }
     }
 
     fun loadBusById(busId: Long) {
         _busState.value = BusState.Loading
+
         viewModelScope.launch {
             when (val result = busRepository.getBusById(busId)) {
-                is Result.Success -> _busState.value = BusState.BusesLoaded(listOf(result.data))
-                is Result.Error   -> _busState.value = BusState.Error(result.message)
-                else              -> _busState.value = BusState.Error("Không tìm thấy xe")
+
+                is Result.Success -> _busState.value =
+                    BusState.BusesLoaded(listOf(result.data))
+
+                is Result.Error -> _busState.value =
+                    BusState.Error(result.message)
+
+                is Result.Loading -> { }
             }
         }
     }
@@ -89,11 +101,17 @@ class BusViewModel(
 
     fun loadSeatsByBus(busId: Long) {
         _busState.value = BusState.Loading
+
         viewModelScope.launch {
             when (val result = seatRepository.getSeatsByBusId(busId)) {
-                is Result.Success -> _busState.value = BusState.SeatsLoaded(result.data)
-                is Result.Error   -> _busState.value = BusState.Error(result.message)
-                else              -> _busState.value = BusState.Error("Không thể tải danh sách ghế")
+
+                is Result.Success -> _busState.value =
+                    BusState.SeatsLoaded(result.data)
+
+                is Result.Error -> _busState.value =
+                    BusState.Error(result.message)
+
+                is Result.Loading -> { }
             }
         }
     }
@@ -103,19 +121,28 @@ class BusViewModel(
      * Ví dụ 40 ghế → A1-A4, B1-B4, ... J1-J4.
      */
     fun generateSeats(busId: Long, totalSeats: Int) {
+
         if (totalSeats <= 0 || totalSeats > 60) {
             _busState.value = BusState.Error("Số ghế phải từ 1 đến 60")
             return
         }
+
         _busState.value = BusState.Loading
+
         viewModelScope.launch {
             when (val result = seatRepository.generateSeats(busId, totalSeats)) {
+
                 is Result.Success -> {
-                    _busState.value = BusState.ActionSuccess("Đã tạo $totalSeats ghế")
+                    _busState.value =
+                        BusState.ActionSuccess("Đã tạo $totalSeats ghế")
+
                     loadSeatsByBus(busId)
                 }
-                is Result.Error   -> _busState.value = BusState.Error(result.message)
-                else              -> _busState.value = BusState.Error("Tạo ghế thất bại")
+
+                is Result.Error -> _busState.value =
+                    BusState.Error(result.message)
+
+                is Result.Loading -> { }
             }
         }
     }

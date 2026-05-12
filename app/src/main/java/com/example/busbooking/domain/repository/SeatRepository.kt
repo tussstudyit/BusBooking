@@ -129,4 +129,29 @@ class SeatRepository(private val seatDAO: SeatDAO) {
                 Result.Error(e, "Error creating seats: ${e.message}")
             }
         }
+    suspend fun getSeatsByBusId(busId: Long): Result<List<Seat>> =
+        withContext(Dispatchers.IO) {
+            try {
+                val seats = seatDAO.getSeatsByBusId(busId)
+                Result.Success(seats)
+            } catch (e: Exception) {
+                Result.Error(e, "Error fetching seats by bus: ${e.message}")
+            }
+        }
+
+    suspend fun generateSeats(busId: Long, totalSeats: Int): Result<Unit> =
+        withContext(Dispatchers.IO) {
+            try {
+                val cols = listOf("A","B","C","D","E","F","G","H","I","J","K","L","M","N","O")
+                val seats = (1..totalSeats).map { i ->
+                    val row = cols[(i - 1) / 4]
+                    val col = ((i - 1) % 4) + 1
+                    Seat(busId = busId, seatNumber = "$row$col")
+                }
+                seatDAO.insertSeats(seats)
+                Result.Success(Unit)
+            } catch (e: Exception) {
+                Result.Error(e, "Error generating seats: ${e.message}")
+            }
+        }
 }
