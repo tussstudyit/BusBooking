@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/background_grey">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -9,85 +11,118 @@
         android:orientation="vertical"
         android:padding="16dp">
 
+        <!-- Tiêu đề -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Trip Details"
-            android:textSize="24sp"
+            android:text="Chi tiết chuyến đi"
+            android:textSize="20sp"
             android:textStyle="bold"
-            android:layout_marginBottom="24dp" />
+            android:textColor="@color/text_primary"
+            android:layout_marginBottom="20dp" />
 
-        <TextView
-            android:id="@+id/routeText"
+        <!-- Card chi tiết -->
+        <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="8dp"
-            android:layout_marginBottom="16dp"
-            android:background="@android:color/darker_gray" />
+            app:cardCornerRadius="12dp"
+            app:cardElevation="4dp"
+            android:layout_marginBottom="20dp">
 
-        <TextView
-            android:id="@+id/dateText"
-            android:layout_width="match_parent"
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <!-- Tuyến đường -->
+                <TextView
+                    android:id="@+id/routeText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary"
+                    android:layout_marginBottom="12dp" />
+
+                <!-- Ngày -->
+                <TextView
+                    android:id="@+id/dateText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="14sp"
+                    android:textColor="@color/text_secondary"
+                    android:layout_marginBottom="8dp" />
+
+                <!-- Giờ khởi hành -->
+                <TextView
+                    android:id="@+id/departureText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="14sp"
+                    android:textColor="@color/text_secondary"
+                    android:layout_marginBottom="8dp" />
+
+                <!-- Giờ đến -->
+                <TextView
+                    android:id="@+id/arrivalText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="14sp"
+                    android:textColor="@color/text_secondary"
+                    android:layout_marginBottom="8dp" />
+
+                <!-- Xe buýt -->
+                <TextView
+                    android:id="@+id/busText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="14sp"
+                    android:textColor="@color/text_secondary"
+                    android:layout_marginBottom="8dp" />
+
+                <!-- Trạng thái -->
+                <TextView
+                    android:id="@+id/statusText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="14sp"
+                    android:textColor="@color/text_secondary"
+                    android:layout_marginBottom="8dp" />
+
+                <!-- Giá -->
+                <TextView
+                    android:id="@+id/priceText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/blue_primary" />
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- ProgressBar -->
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:padding="8dp"
-            android:layout_marginBottom="16dp"
-            android:background="@android:color/darker_gray" />
+            android:layout_gravity="center_horizontal"
+            android:visibility="gone" />
 
-        <TextView
-            android:id="@+id/departureText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="8dp"
-            android:layout_marginBottom="16dp"
-            android:background="@android:color/darker_gray" />
-
-        <TextView
-            android:id="@+id/arrivalText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="8dp"
-            android:layout_marginBottom="16dp"
-            android:background="@android:color/darker_gray" />
-
-        <TextView
-            android:id="@+id/priceText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="8dp"
-            android:layout_marginBottom="16dp"
-            android:background="@android:color/darker_gray" />
-
-        <TextView
-            android:id="@+id/busText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="8dp"
-            android:layout_marginBottom="16dp"
-            android:background="@android:color/darker_gray" />
-
-        <TextView
-            android:id="@+id/statusText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="8dp"
-            android:layout_marginBottom="24dp"
-            android:background="@android:color/darker_gray" />
-
-        <Button
+        <!-- Nút chọn ghế -->
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/selectSeatButton"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="SELECT SEATS"
-            android:layout_marginBottom="12dp" />
-
-        <Button
-            android:id="@+id/backButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="BACK"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+            android:layout_height="48dp"
+            android:text="Chọn ghế"
+            android:textSize="16sp"
+            android:layout_marginTop="20dp"
+            app:backgroundTint="@color/blue_primary"
+            app:cornerRadius="12dp" />
 
     </LinearLayout>
 
-</ScrollView>
+</androidx.core.widget.NestedScrollView>
 

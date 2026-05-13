@@ -2,6 +2,7 @@ package com.example.busbooking.presentation.ui
 
 import android.app.DatePickerDialog
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,6 +17,8 @@ import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.NavOptions
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -27,6 +30,7 @@ import com.example.busbooking.domain.repository.RouteRepository
 import com.example.busbooking.domain.repository.SeatRepository
 import com.example.busbooking.domain.repository.TicketRepository
 import com.example.busbooking.presentation.adapter.SeatAdapter
+import com.example.busbooking.presentation.adapter.TicketAdapter
 import com.example.busbooking.presentation.ui.state.BookingState
 import com.example.busbooking.presentation.ui.state.UserState
 import com.example.busbooking.presentation.viewmodel.BookingConfirmationViewModel
@@ -39,6 +43,7 @@ import com.example.busbooking.presentation.viewmodel.ViewModelFactory
 import com.example.busbooking.utils.SessionManager
 import java.text.SimpleDateFormat
 import java.util.*
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // BASE: Tái sử dụng UI loading/empty/error + RecyclerView chung cho ticket list
@@ -124,46 +129,55 @@ internal abstract class BaseTicketListFragment : Fragment() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 1. MyTicketsFragment
+// 1. MyTicketsFragment — chỉ hiển thị vé CONFIRMED hoặc PENDING
 // ─────────────────────────────────────────────────────────────────────────────
-
-// Dòng 117
 internal class MyTicketsFragment : BaseTicketListFragment() {
 
     override val layoutResId    = R.layout.fragment_my_tickets
     override val recyclerViewId = R.id.ticketsRecyclerView
 
     override fun onTicketsLoaded(state: UserState.TicketsLoaded) {
-        if (state.tickets.isEmpty()) {
+        val upcoming = state.tickets.filter {
+            it.ticket.status == "CONFIRMED" || it.ticket.status == "PENDING"
+        }
+        if (upcoming.isEmpty()) {
             showEmpty()
+            emptyText.text = "Bạn chưa có vé nào sắp tới"
         } else {
             showList()
-            // TODO: set adapter
-            // recyclerView.adapter = TicketAdapter(state.tickets) { ticket ->
-            //     val bundle = Bundle().apply { putLong("ticketId", ticket.ticket.id) }
-            //     findNavController().navigate(
-            //         R.id.action_myTicketsFragment_to_ticketDetailsFragment, bundle)
-            // }
+            val adapter = TicketAdapter { ticket ->
+                val bundle = Bundle().apply { putLong("ticketId", ticket.ticket.id) }
+                findNavController().navigate(
+                    R.id.action_myTicketsFragment_to_ticketDetailsFragment, bundle)
+            }
+            recyclerView.adapter = adapter
+            adapter.submitList(upcoming)
         }
     }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 2. BookingHistoryFragment
+// 2. BookingHistoryFragment — hiển thị TẤT CẢ vé kể cả đã hủy/đã đi
 // ─────────────────────────────────────────────────────────────────────────────
-
-// Dòng 141
 internal class BookingHistoryFragment : BaseTicketListFragment() {
 
     override val layoutResId    = R.layout.fragment_booking_history
     override val recyclerViewId = R.id.historyRecyclerView
 
     override fun onTicketsLoaded(state: UserState.TicketsLoaded) {
-        if (state.tickets.isEmpty()) {
+        val allTickets = state.tickets.sortedByDescending { it.ticket.bookingTime }
+        if (allTickets.isEmpty()) {
             showEmpty()
+            emptyText.text = "Bạn chưa có lịch sử đặt vé nào"
         } else {
             showList()
-            // TODO: set adapter
+            val adapter = TicketAdapter { ticket ->
+                val bundle = Bundle().apply { putLong("ticketId", ticket.ticket.id) }
+                findNavController().navigate(
+                    R.id.action_myTicketsFragment_to_ticketDetailsFragment, bundle)
+            }
+            recyclerView.adapter = adapter
+            adapter.submitList(allTickets)
         }
     }
 }
@@ -289,32 +303,10 @@ class UserDashboardFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? = inflater.inflate(R.layout.fragment_user_dashboard, container, false)
+    ): View? = inflater.inflate(R.layout.fragment_home, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        val nav = findNavController()
-        view.findViewById<Button>(R.id.searchRoutesButton).setOnClickListener {
-            nav.navigate(R.id.action_userDashboardFragment_to_routeSearchFragment)
-        }
-        view.findViewById<Button>(R.id.myTicketsButton).setOnClickListener {
-            nav.navigate(R.id.action_userDashboardFragment_to_myTicketsFragment)
-        }
-        view.findViewById<Button>(R.id.bookingHistoryButton).setOnClickListener {
-            nav.navigate(R.id.action_userDashboardFragment_to_bookingHistoryFragment)
-        }
-        view.findViewById<Button>(R.id.profileButton).setOnClickListener {
-            nav.navigate(R.id.action_userDashboardFragment_to_userProfileFragment)
-        }
-        view.findViewById<Button>(R.id.logoutButton).setOnClickListener {
-            SessionManager.clearSession()
-            nav.navigate(
-                R.id.loginFragment,
-                null,
-                NavOptions.Builder().setPopUpTo(R.id.userDashboardFragment, true).build()
-            )
-        }
     }
 }
 
@@ -331,6 +323,7 @@ class UserProfileFragment : Fragment() {
         }
     }
 
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -339,11 +332,15 @@ class UserProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val nameInput    = view.findViewById<EditText>(R.id.nameInput)
-        val emailInput   = view.findViewById<EditText>(R.id.emailInput)
-        val phoneInput   = view.findViewById<EditText>(R.id.phoneInput)
-        val saveButton   = view.findViewById<Button>(R.id.saveButton)
+        // Xóa dòng: sessionManager = SessionManager(requireContext())
+
+        val nameInput = view.findViewById<EditText>(R.id.nameInput)
+        val emailInput = view.findViewById<EditText>(R.id.emailInput)
+        val phoneInput = view.findViewById<EditText>(R.id.phoneInput)
+        val saveButton = view.findViewById<Button>(R.id.saveButton)
         val logoutButton = view.findViewById<Button>(R.id.logoutButton)
+
+        viewModel.loadProfile(SessionManager.getCurrentUserId())
 
         viewModel.user.observe(viewLifecycleOwner) { user ->
             user ?: return@observe
@@ -363,10 +360,11 @@ class UserProfileFragment : Fragment() {
         }
 
         saveButton.setOnClickListener {
-            val name  = nameInput.text.toString().trim()
+            val name = nameInput.text.toString().trim()
             val phone = phoneInput.text.toString().trim()
             if (name.isEmpty()) {
-                Toast.makeText(requireContext(), "Tên không được để trống", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Tên không được để trống", Toast.LENGTH_SHORT)
+                    .show()
                 return@setOnClickListener
             }
             viewModel.updateProfile(name, phone)
@@ -378,8 +376,6 @@ class UserProfileFragment : Fragment() {
                 R.id.action_userProfileFragment_to_loginFragment
             )
         }
-
-        viewModel.loadProfile(SessionManager.getCurrentUserId())
     }
 }
 
@@ -468,9 +464,20 @@ class RouteSearchFragment : Fragment() {
 
 class SeatSelectionFragment : Fragment() {
 
-    private val viewModel: SeatSelectionViewModel by viewModels()
-    private lateinit var adapter: SeatAdapter
+    private val viewModel: SeatSelectionViewModel by viewModels {
+        val db = BusBookingDatabase.getInstance(requireContext())
+        ViewModelFactory {
+            SeatSelectionViewModel(
+                SeatRepository(db.seatDao()),
+                TicketRepository(db.ticketDao(), db.seatDao())
+            )
+        }
+    }
+
+    private lateinit var adapterFloor1: SeatAdapter
+    private lateinit var adapterFloor2: SeatAdapter
     private var tripId: Long = -1L
+    private var tripPrice: Double = 0.0
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -480,36 +487,59 @@ class SeatSelectionFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        tripId = arguments?.getLong("tripId", -1L) ?: -1L
+        tripId    = arguments?.getLong("tripId", -1L) ?: -1L
+        tripPrice = arguments?.getDouble("tripPrice", 0.0) ?: 0.0
+
         if (tripId == -1L) {
-            Toast.makeText(requireContext(), "Invalid trip", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Chuyến xe không hợp lệ", Toast.LENGTH_SHORT).show()
             findNavController().popBackStack()
             return
         }
 
-        val seatsRecyclerView: RecyclerView = view.findViewById(R.id.seatsRecyclerView)
-        val selectedSeatText: TextView      = view.findViewById(R.id.selectedSeatText)
-        val confirmButton: Button           = view.findViewById(R.id.confirmButton)
+        viewModel.setTripPrice(tripPrice)
 
-        // SeatAdapter nhận callback khi user chọn ghế
-        adapter = SeatAdapter { seat -> viewModel.selectSeat(seat) }
+        val rv1 = view.findViewById<RecyclerView>(R.id.seatsFloor1RecyclerView)
+        val rv2 = view.findViewById<RecyclerView>(R.id.seatsFloor2RecyclerView)
+        val selectedSeatText = view.findViewById<TextView>(R.id.selectedSeatText)
+        val totalPriceText   = view.findViewById<TextView>(R.id.totalPriceText)
+        val confirmButton    = view.findViewById<Button>(R.id.confirmButton)
 
-        seatsRecyclerView.layoutManager = GridLayoutManager(requireContext(), 4)
-        seatsRecyclerView.adapter = adapter
+        adapterFloor1 = SeatAdapter { seat -> viewModel.toggleSeat(seat) }
+        adapterFloor2 = SeatAdapter { seat -> viewModel.toggleSeat(seat) }
+
+        rv1.layoutManager = GridLayoutManager(requireContext(), 3)
+        rv2.layoutManager = GridLayoutManager(requireContext(), 3)
+        rv1.adapter = adapterFloor1
+        rv2.adapter = adapterFloor2
 
         viewModel.seats.observe(viewLifecycleOwner) { seats ->
-            adapter.submitList(seats)
+            val floor1 = seats.filter { it.floor == 1 }
+            val floor2 = seats.filter { it.floor == 2 }
+            adapterFloor1.submitList(floor1)
+            adapterFloor2.submitList(floor2)
         }
 
-        viewModel.selectedSeat.observe(viewLifecycleOwner) { seat ->
-            adapter.setSelectedSeat(seat)
-            selectedSeatText.text = if (seat != null) "Đã chọn: ${seat.seatNumber}" else "Chưa chọn ghế"
+        viewModel.selectedSeats.observe(viewLifecycleOwner) { selected ->
+            adapterFloor1.setSelectedSeats(selected)
+            adapterFloor2.setSelectedSeats(selected)
+            if (selected.isEmpty()) {
+                selectedSeatText.text = "Chưa chọn ghế"
+            } else {
+                selectedSeatText.text = "Ghế: ${selected.joinToString(", ") { it.seatNumber }}"
+            }
         }
 
-        viewModel.bookingResult.observe(viewLifecycleOwner) { newTicketId ->
-            newTicketId ?: return@observe
-            val bundle = Bundle().apply { putLong("ticketId", newTicketId) }
-            findNavController().navigate(R.id.action_seatSelectionFragment_to_bookingConfirmationFragment, bundle)
+        viewModel.totalPrice.observe(viewLifecycleOwner) { price ->
+            totalPriceText.text = "${String.format("%,.0f", price)}đ"
+        }
+
+        viewModel.bookingResult.observe(viewLifecycleOwner) { ticketIds ->
+            ticketIds ?: return@observe
+            // Navigate đến confirmation, truyền ticketId đầu tiên hoặc list
+            val bundle = Bundle().apply { putLong("ticketId", ticketIds.first()) }
+            findNavController().navigate(
+                R.id.action_seatSelectionFragment_to_bookingConfirmationFragment, bundle
+            )
         }
 
         viewModel.error.observe(viewLifecycleOwner) { msg ->
@@ -518,11 +548,11 @@ class SeatSelectionFragment : Fragment() {
         }
 
         confirmButton.setOnClickListener {
-            if (viewModel.selectedSeat.value == null) {
+            if (viewModel.selectedSeats.value.isNullOrEmpty()) {
                 Toast.makeText(requireContext(), "Vui lòng chọn ghế", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            viewModel.bookSeat(tripId)
+            viewModel.bookSeats(tripId)
         }
 
         viewModel.loadSeats(tripId)
@@ -557,7 +587,7 @@ class BookingConfirmationFragment : Fragment() {
         val seatText: TextView        = view.findViewById(R.id.seatText)
         val priceText: TextView       = view.findViewById(R.id.priceText)
         val statusText: TextView      = view.findViewById(R.id.statusText)
-        val bookingTimeText: TextView = view.findViewById(R.id.bookingTimeText)
+
         val viewTicketsButton: Button = view.findViewById(R.id.viewTicketsButton)
 
         val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
@@ -575,7 +605,6 @@ class BookingConfirmationFragment : Fragment() {
             seatText.text        = "Ghế: ${seat.seatNumber}"
             priceText.text       = "Giá: ${String.format("%,.0f", trip.price)} VNĐ"
             statusText.text      = "Trạng thái: ${ticket.status}"
-            bookingTimeText.text = "Đặt lúc: ${sdf.format(Date(ticket.bookingTime))}"
         }
 
         viewTicketsButton.setOnClickListener {

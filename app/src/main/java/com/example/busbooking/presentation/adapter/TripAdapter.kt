@@ -3,6 +3,7 @@ package com.example.busbooking.presentation.adapter
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -20,13 +21,14 @@ class TripAdapter(
     private val dateFmt = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
 
     inner class TripViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val routeText: TextView      = itemView.findViewById(R.id.itemRouteText)
-        val dateText: TextView       = itemView.findViewById(R.id.itemDateText)
-        val departureText: TextView  = itemView.findViewById(R.id.itemDepartureText)
-        val arrivalText: TextView    = itemView.findViewById(R.id.itemArrivalText)
-        val priceText: TextView      = itemView.findViewById(R.id.itemPriceText)
-        val busText: TextView        = itemView.findViewById(R.id.itemBusText)
-        val statusText: TextView     = itemView.findViewById(R.id.itemStatusText)
+        val busText: TextView         = itemView.findViewById(R.id.itemBusText)
+        val departureText: TextView   = itemView.findViewById(R.id.itemDepartureText)
+        val dateText: TextView        = itemView.findViewById(R.id.itemDateText)
+        val busTypeText: TextView     = itemView.findViewById(R.id.itemBusTypeText)
+        val seatsText: TextView       = itemView.findViewById(R.id.itemSeatsText)
+        val seatsProgress: ProgressBar = itemView.findViewById(R.id.itemSeatsProgress)
+        val priceText: TextView       = itemView.findViewById(R.id.itemPriceText)
+        val statusText: TextView      = itemView.findViewById(R.id.itemStatusText)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TripViewHolder {
@@ -37,14 +39,24 @@ class TripAdapter(
 
     override fun onBindViewHolder(holder: TripViewHolder, position: Int) {
         val item = getItem(position)
+        val totalSeats = item.bus.totalSeats
+
+        // Giả lập số ghế còn (thay bằng query thực nếu có)
+        val availableSeats = (totalSeats * 0.8).toInt()
+        val occupiedPercent = ((totalSeats - availableSeats) * 100 / totalSeats)
+
         with(holder) {
-            routeText.text     = "${item.route.origin} → ${item.route.destination}"
+            busText.text       = item.bus.busName
+            departureText.text = timeFmt.format(Date(item.trip.departureTime))
             dateText.text      = dateFmt.format(Date(item.trip.tripDate))
-            departureText.text = "Khởi hành: ${timeFmt.format(Date(item.trip.departureTime))}"
-            arrivalText.text   = "Đến nơi: ${timeFmt.format(Date(item.trip.arrivalTime))}"
-            priceText.text     = "Giá: ${String.format("%,.0f", item.trip.price)} VNĐ"
-            busText.text       = "${item.bus.busName} (${item.bus.licensePlate})"
-            statusText.text    = item.trip.status
+            busTypeText.text   = "XE ${totalSeats} GIƯỜNG"
+            seatsText.text     = "Còn $availableSeats/$totalSeats giường"
+            seatsProgress.progress = occupiedPercent
+
+            // Hiển thị giá dạng "190" với ".000 VNĐ" bên dưới
+            val priceInThousands = (item.trip.price / 1000).toInt()
+            priceText.text  = "$priceInThousands"
+            statusText.text = ".000 VNĐ"
 
             itemView.setOnClickListener { onItemClick(item) }
         }
@@ -54,7 +66,6 @@ class TripAdapter(
         private val DiffCallback = object : DiffUtil.ItemCallback<TripWithRouteAndBus>() {
             override fun areItemsTheSame(old: TripWithRouteAndBus, new: TripWithRouteAndBus) =
                 old.trip.id == new.trip.id
-
             override fun areContentsTheSame(old: TripWithRouteAndBus, new: TripWithRouteAndBus) =
                 old == new
         }

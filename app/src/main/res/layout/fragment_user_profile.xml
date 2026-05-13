@@ -1,105 +1,109 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/background_grey">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="20dp">
+        android:padding="16dp">
 
+        <!-- Tiêu đề -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="User Profile"
-            android:textSize="24sp"
+            android:text="Hồ sơ"
+            android:textSize="20sp"
             android:textStyle="bold"
-            android:layout_marginBottom="24dp" />
+            android:textColor="@color/text_primary"
+            android:layout_marginBottom="20dp" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Full Name"
-            android:textStyle="bold"
-            android:textSize="14sp"
-            android:layout_marginBottom="4dp" />
+        <!-- Avatar -->
+        <ImageView
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="20dp"
+            android:src="@drawable/ic_launcher_foreground"
+            android:scaleType="centerInside"
+            android:background="@color/background_white"
+            android:padding="4dp" />
 
-        <EditText
-            android:id="@+id/nameInput"
+        <!-- Tên -->
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Full Name"
-            android:inputType="text"
-            android:padding="12dp"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginBottom="12dp"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Email"
-            android:textStyle="bold"
-            android:textSize="14sp"
-            android:layout_marginBottom="4dp" />
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/nameInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Tên của bạn"
+                android:inputType="text" />
 
-        <EditText
-            android:id="@+id/emailInput"
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Email (disabled) -->
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Email"
-            android:inputType="textEmailAddress"
-            android:enabled="false"
-            android:padding="12dp"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginBottom="12dp"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Phone"
-            android:textStyle="bold"
-            android:textSize="14sp"
-            android:layout_marginBottom="4dp" />
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/emailInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Email"
+                android:inputType="textEmailAddress"
+                android:enabled="false" />
 
-        <EditText
-            android:id="@+id/phoneInput"
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Số điện thoại -->
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Phone Number"
-            android:inputType="phone"
-            android:padding="12dp"
-            android:layout_marginBottom="24dp" />
+            android:layout_marginBottom="20dp"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
-        <ProgressBar
-            android:id="@+id/progressBar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:visibility="gone"
-            android:layout_gravity="center"
-            android:layout_marginBottom="16dp" />
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/phoneInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Số điện thoại"
+                android:inputType="phone" />
 
-        <TextView
-            android:id="@+id/errorText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:visibility="gone"
-            android:textColor="@android:color/holo_red_dark"
-            android:layout_marginBottom="16dp" />
+        </com.google.android.material.textfield.TextInputLayout>
 
-        <Button
+        <!-- Nút lưu -->
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/saveButton"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="UPDATE"
-            android:layout_marginBottom="12dp" />
+            android:layout_height="48dp"
+            android:text="Lưu thay đổi"
+            android:textSize="16sp"
+            android:layout_marginBottom="12dp"
+            app:backgroundTint="@color/blue_primary"
+            app:cornerRadius="12dp" />
 
-        <Button
+        <!-- Nút đăng xuất -->
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/logoutButton"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="LOGOUT"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+            android:layout_height="48dp"
+            android:text="Đăng xuất"
+            android:textSize="16sp"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            app:strokeColor="@color/error"
+            app:cornerRadius="12dp" />
 
     </LinearLayout>
 
-</ScrollView>
+</androidx.core.widget.NestedScrollView>
 

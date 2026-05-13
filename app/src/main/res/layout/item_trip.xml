@@ -1,88 +1,198 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="12dp"
-    app:cardCornerRadius="8dp"
-    app:cardElevation="3dp">
+    android:orientation="horizontal">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+    <!-- Phần trái: thông tin chuyến -->
+    <androidx.cardview.widget.CardView
+        android:layout_width="0dp"
+        android:layout_height="126dp"
+        android:layout_weight="5"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="3dp"
+        app:cardBackgroundColor="#FFF8F0">
 
-        <!-- Tuyến đường -->
-        <TextView
-            android:id="@+id/itemRouteText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="6dp" />
-
-        <!-- Ngày chạy -->
-        <TextView
-            android:id="@+id/itemDateText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textSize="13sp"
-            android:layout_marginBottom="4dp" />
-
-        <!-- Giờ khởi hành + đến nơi (nằm ngang) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="4dp">
+            android:orientation="vertical"
+            android:padding="14dp">
 
-            <TextView
-                android:id="@+id/itemDepartureText"
-                android:layout_width="0dp"
+            <!-- Tên xe + giờ -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:textSize="13sp" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="6dp">
 
-            <TextView
-                android:id="@+id/itemArrivalText"
-                android:layout_width="0dp"
+                <TextView
+                    android:id="@+id/itemBusText"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary" />
+
+                <TextView
+                    android:id="@+id/itemDepartureText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary" />
+
+            </LinearLayout>
+
+            <!-- Ngày đi -->
+            <LinearLayout
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:textSize="13sp" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="4dp">
+
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_history_selector"
+                    android:layout_marginEnd="4dp" />
+
+                <TextView
+                    android:id="@+id/itemDateText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="13sp"
+                    android:textColor="@color/text_secondary" />
+
+            </LinearLayout>
+
+            <!-- Loại xe -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="4dp">
+
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_route_outline"
+                    android:layout_marginEnd="4dp" />
+
+                <TextView
+                    android:id="@+id/itemBusTypeText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="13sp"
+                    android:textColor="@color/text_secondary" />
+
+            </LinearLayout>
+
+            <!-- Số ghế còn -->
+            <TextView
+                android:id="@+id/itemSeatsText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="13sp"
+                android:textColor="@color/blue_primary"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Progress bar ghế -->
+            <ProgressBar
+                android:id="@+id/itemSeatsProgress"
+                style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="4dp"
+                android:progressTint="@color/blue_primary"
+                android:progressBackgroundTint="@color/background_grey"
+                android:max="100" />
 
         </LinearLayout>
 
-        <!-- Giá vé -->
-        <TextView
-            android:id="@+id/itemPriceText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textSize="14sp"
-            android:textColor="#E65100"
-            android:textStyle="bold"
-            android:layout_marginBottom="4dp" />
+    </androidx.cardview.widget.CardView>
 
-        <!-- Xe -->
-        <TextView
-            android:id="@+id/itemBusText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textSize="13sp"
-            android:layout_marginBottom="4dp" />
+    <!-- Đường đứt nét dọc giữa -->
+    <LinearLayout
+        android:layout_width="12dp"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="#FFF8F0">
 
-        <!-- Trạng thái -->
-        <TextView
-            android:id="@+id/itemStatusText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="12sp"
-            android:textColor="#1976D2"
-            android:background="@drawable/bg_status_chip"
-            android:paddingHorizontal="8dp"
-            android:paddingVertical="2dp" />
+        <View
+            android:layout_width="2dp"
+            android:layout_height="12dp"
+            android:background="@color/background_grey"
+            android:layout_marginBottom="4dp" />
+        <View
+            android:layout_width="2dp"
+            android:layout_height="12dp"
+            android:background="@color/background_grey"
+            android:layout_marginBottom="4dp" />
+        <View
+            android:layout_width="2dp"
+            android:layout_height="12dp"
+            android:background="@color/background_grey"
+            android:layout_marginBottom="4dp" />
+        <View
+            android:layout_width="2dp"
+            android:layout_height="12dp"
+            android:background="@color/background_grey"
+            android:layout_marginBottom="4dp" />
+        <View
+            android:layout_width="2dp"
+            android:layout_height="12dp"
+            android:background="@color/background_grey"
+            android:layout_marginBottom="4dp" />
+        <View
+            android:layout_width="2dp"
+            android:layout_height="12dp"
+            android:background="@color/background_grey" />
 
     </LinearLayout>
 
-</androidx.cardview.widget.CardView>
+    <!-- Phần phải: giá -->
+    <androidx.cardview.widget.CardView
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="3"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="5dp"
+        app:cardBackgroundColor="#FFF8F0">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="8dp">
+
+            <TextView
+                android:id="@+id/itemPriceText"
+                android:layout_width="match_parent"
+                android:layout_height="89dp"
+                android:textSize="40sp"
+                android:textStyle="bold"
+                android:textColor="@color/blue_primary"
+                android:gravity="center" />
+
+            <TextView
+                android:id="@+id/itemStatusText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text=".000 VNĐ"
+                android:textColor="@color/text_secondary"
+                android:textSize="15sp" />
+
+        </LinearLayout>
+
+    </androidx.cardview.widget.CardView>
+
+</LinearLayout>

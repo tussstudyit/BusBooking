@@ -57,7 +57,7 @@ class SplashFragment : Fragment() {
             val dest = if (SessionManager.getCurrentUserRole() == "ADMIN")
                 R.id.action_splashFragment_to_adminDashboardFragment
             else
-                R.id.action_splashFragment_to_userDashboardFragment
+                R.id.action_splashFragment_to_nav_home
             nav.navigate(dest)
         } else {
             nav.navigate(R.id.action_splashFragment_to_loginFragment)
@@ -144,7 +144,7 @@ class LoginFragment : Fragment() {
         val dest = if (SessionManager.getCurrentUserRole() == "ADMIN")
             R.id.action_loginFragment_to_adminDashboardFragment
         else
-            R.id.action_loginFragment_to_userDashboardFragment
+            R.id.action_loginFragment_to_homeFragment
         findNavController().navigate(dest)
     }
 
@@ -238,7 +238,7 @@ class RegisterFragment : Fragment() {
                     progressBar.visibility   = View.GONE
                     errorText.visibility     = View.GONE
                     registerButton.isEnabled = true
-                    findNavController().navigate(R.id.action_registerFragment_to_loginFragment)
+                    findNavController().navigate(R.id.action_registerFragment_to_homeFragment) // ✅ về nav_home
                 }
                 is AuthState.Error -> {
                     progressBar.visibility   = View.GONE

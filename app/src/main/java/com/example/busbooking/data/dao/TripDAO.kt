@@ -29,15 +29,16 @@ interface TripDAO {
      */
     @Transaction
     @Query("""
-        SELECT t.* FROM trips t
-        WHERE t.routeId = :routeId 
-          AND t.tripDate = :tripDate 
-          AND t.status = 'SCHEDULED'
-        ORDER BY t.departureTime
-    """)
+    SELECT t.* FROM trips t
+    WHERE t.routeId = :routeId
+      AND t.tripDate >= :dayStart
+      AND t.tripDate < :dayStart + 86400000
+      AND t.status = 'SCHEDULED'
+    ORDER BY t.departureTime
+""")
     suspend fun getTripsForRouteAndDate(
         routeId: Long,
-        tripDate: Long
+        dayStart: Long
     ): List<TripWithRouteAndBus>
 
     @Transaction

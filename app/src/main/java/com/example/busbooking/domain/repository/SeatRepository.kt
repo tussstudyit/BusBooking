@@ -145,8 +145,18 @@ class SeatRepository(private val seatDAO: SeatDAO) {
                 val cols = listOf("A","B","C","D","E","F","G","H","I","J","K","L","M","N","O")
                 val seats = (1..totalSeats).map { i ->
                     val row = cols[(i - 1) / 4]
-                    val col = ((i - 1) % 4) + 1
-                    Seat(busId = busId, seatNumber = "$row$col")
+                    val col = ((i - 1) % 4)
+                    val rowIndex = (i - 1) / 4
+                    val columnIndex = col
+                    Seat(
+                        busId = busId,
+                        seatNumber = "$row${col + 1}",
+                        floor = if (i <= totalSeats / 2) 1 else 2,
+                        rowIndex = rowIndex,
+                        columnIndex = columnIndex,
+                        isWindow = (col == 0 || col == 3),
+                        seatType = "NORMAL"
+                    )
                 }
                 seatDAO.insertSeats(seats)
                 Result.Success(Unit)

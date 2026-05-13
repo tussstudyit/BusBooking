@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/background_grey">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -9,87 +11,81 @@
         android:orientation="vertical"
         android:padding="16dp">
 
+        <!-- Tiêu đề -->
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Search Routes"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="24dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="From"
-            android:textStyle="bold"
-            android:textSize="14sp"
-            android:layout_marginBottom="4dp" />
-
-        <AutoCompleteTextView
-            android:id="@+id/originInput"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Select departure"
-            android:inputType="text"
-            android:padding="12dp"
-            android:layout_marginBottom="16dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="To"
+            android:text="Tìm chuyến đi"
+            android:textSize="20sp"
             android:textStyle="bold"
-            android:textSize="14sp"
-            android:layout_marginBottom="4dp" />
+            android:textColor="@color/text_primary"
+            android:layout_marginBottom="20dp" />
 
-        <AutoCompleteTextView
-            android:id="@+id/destinationInput"
+        <!-- Điểm xuất phát -->
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Select destination"
-            android:inputType="text"
-            android:padding="12dp"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginBottom="12dp"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
-        <TextView
-            android:layout_width="wrap_content"
+            <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                android:id="@+id/originInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Điểm xuất phát"
+                android:inputType="text" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Điểm đích -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Date"
-            android:textStyle="bold"
-            android:textSize="14sp"
-            android:layout_marginBottom="4dp" />
+            android:layout_marginBottom="12dp"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
-        <Button
+            <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                android:id="@+id/destinationInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Điểm đích"
+                android:inputType="text" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Nút chọn ngày -->
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/dateButton"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Select date"
-            android:padding="12dp"
-            android:layout_marginBottom="24dp" />
+            android:layout_height="48dp"
+            android:text="Chọn ngày"
+            android:textSize="14sp"
+            android:layout_marginBottom="12dp"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            app:strokeColor="@color/blue_primary"
+            app:cornerRadius="12dp" />
 
+        <!-- ProgressBar -->
         <ProgressBar
             android:id="@+id/progressBar"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:visibility="gone"
-            android:layout_gravity="center"
-            android:layout_marginBottom="16dp" />
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="16dp"
+            android:visibility="gone" />
 
-        <Button
+        <!-- Nút tìm kiếm -->
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/searchButton"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="SEARCH"
-            android:layout_marginBottom="12dp" />
-
-        <Button
-            android:id="@+id/backButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="BACK"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+            android:layout_height="48dp"
+            android:text="Tìm kiếm"
+            android:textSize="16sp"
+            android:layout_marginTop="20dp"
+            app:backgroundTint="@color/blue_primary"
+            app:cornerRadius="12dp" />
 
     </LinearLayout>
 
-</ScrollView>
+</androidx.core.widget.NestedScrollView>
 

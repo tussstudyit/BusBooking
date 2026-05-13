@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/background_grey">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -9,96 +11,75 @@
         android:orientation="vertical"
         android:padding="16dp">
 
+        <!-- Tiêu đề -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Route Form"
-            android:textSize="24sp"
+            android:text="Tuyến đường"
+            android:textSize="20sp"
             android:textStyle="bold"
-            android:layout_marginBottom="24dp" />
+            android:textColor="@color/text_primary"
+            android:layout_marginBottom="20dp" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="From Location"
-            android:textStyle="bold"
-            android:textSize="14sp"
-            android:layout_marginBottom="4dp" />
-
-        <EditText
-            android:id="@+id/originInput"
+        <!-- Điểm xuất phát -->
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Enter starting location"
-            android:inputType="text"
-            android:padding="12dp"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginBottom="12dp"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="To Location"
-            android:textStyle="bold"
-            android:textSize="14sp"
-            android:layout_marginBottom="4dp" />
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/originInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Điểm xuất phát"
+                android:inputType="text" />
 
-        <EditText
-            android:id="@+id/destinationInput"
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Điểm đích -->
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Enter end location"
-            android:inputType="text"
-            android:padding="12dp"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginBottom="12dp"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Distance (km)"
-            android:textStyle="bold"
-            android:textSize="14sp"
-            android:layout_marginBottom="4dp" />
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/destinationInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Điểm đích"
+                android:inputType="text" />
 
-        <EditText
-            android:id="@+id/distanceInput"
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Khoảng cách -->
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Enter distance"
-            android:inputType="numberDecimal"
-            android:padding="12dp"
-            android:layout_marginBottom="24dp" />
+            android:layout_marginBottom="20dp"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
-        <ProgressBar
-            android:id="@+id/progressBar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:visibility="gone"
-            android:layout_gravity="center"
-            android:layout_marginBottom="16dp" />
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/distanceInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Khoảng cách (km)"
+                android:inputType="numberDecimal" />
 
-        <TextView
-            android:id="@+id/errorText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:visibility="gone"
-            android:textColor="@android:color/holo_red_dark"
-            android:layout_marginBottom="16dp" />
+        </com.google.android.material.textfield.TextInputLayout>
 
-        <Button
+        <!-- Nút lưu -->
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/saveButton"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="SAVE"
-            android:layout_marginBottom="12dp" />
-
-        <Button
-            android:id="@+id/backButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="BACK"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+            android:layout_height="48dp"
+            android:text="Lưu"
+            android:textSize="16sp"
+            app:backgroundTint="@color/blue_primary"
+            app:cornerRadius="12dp" />
 
     </LinearLayout>
 
-</ScrollView>
+</androidx.core.widget.NestedScrollView>
 

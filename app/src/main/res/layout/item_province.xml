@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@color/white"
+    android:layout_marginBottom="8dp">
+
+    <!-- Province Header (click để expand/collapse) -->
+    <LinearLayout
+        android:id="@+id/provinceHeader"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:background="?attr/selectableItemBackground">
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_location_pin"
+            android:layout_marginEnd="12dp" />
+
+        <TextView
+            android:id="@+id/provinceName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_primary" />
+
+        <ImageView
+            android:id="@+id/expandIcon"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_chevron_down"
+            android:rotation="0" />
+
+    </LinearLayout>
+
+    <!-- Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/divider" />
+
+    <!-- Stops Container (ẩn mặc định) -->
+    <LinearLayout
+        android:id="@+id/stopsContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone" />
+
+</LinearLayout>

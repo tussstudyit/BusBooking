@@ -1,96 +1,229 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:background="@color/background_grey">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Select Seats"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="16dp" />
-
+    <!-- Header -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:layout_marginBottom="16dp">
-
-        <View
-            android:layout_width="16dp"
-            android:layout_height="16dp"
-            android:background="@android:color/holo_green_dark"
-            android:layout_marginEnd="8dp" />
+        android:gravity="center_vertical"
+        android:padding="16dp"
+        android:background="@color/background_white">
 
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Available"
-            android:layout_marginEnd="24dp" />
-
-        <View
-            android:layout_width="16dp"
-            android:layout_height="16dp"
-            android:background="@android:color/holo_red_dark"
-            android:layout_marginEnd="8dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Occupied"
-            android:layout_marginEnd="24dp" />
-
-        <View
-            android:layout_width="16dp"
-            android:layout_height="16dp"
-            android:background="@android:color/darker_gray"
-            android:layout_marginEnd="8dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Selected" />
+            android:layout_weight="1"
+            android:text="Chọn chỗ ngồi"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_primary" />
 
     </LinearLayout>
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/seatsRecyclerView"
+    <!-- Legend -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="12dp"
+        android:background="@color/background_white"
+        android:layout_marginTop="1dp">
+
+        <View
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:background="@color/background_grey"
+            android:layout_marginEnd="4dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Đã bán"
+            android:textSize="12sp"
+            android:textColor="@color/text_secondary"
+            android:layout_marginEnd="16dp" />
+
+        <View
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:background="@color/seat_selected"
+            android:layout_marginEnd="4dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Đang chọn"
+            android:textSize="12sp"
+            android:textColor="@color/text_secondary"
+            android:layout_marginEnd="16dp" />
+
+        <View
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:background="@color/seat_available"
+            android:layout_marginEnd="4dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Còn trống"
+            android:textSize="12sp"
+            android:textColor="@color/text_secondary" />
+
+    </LinearLayout>
+
+    <!-- 2 tầng ghế -->
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:layout_marginBottom="16dp" />
+        android:padding="12dp">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Selected Seats:"
-        android:textStyle="bold"
-        android:layout_marginBottom="8dp" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
 
-    <TextView
-        android:id="@+id/selectedSeatText"
+            <!-- Tầng 1 -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="6dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="2dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="🚌"
+                            android:textSize="18sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Tầng 1"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/text_primary" />
+
+                    </LinearLayout>
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/seatsFloor1RecyclerView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:nestedScrollingEnabled="false" />
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
+            <!-- Tầng 2 -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="2dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Tầng 2"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary"
+                        android:gravity="end"
+                        android:layout_marginBottom="12dp" />
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/seatsFloor2RecyclerView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:nestedScrollingEnabled="false" />
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Bottom bar -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="8dp"
-        android:layout_marginBottom="16dp"
-        android:background="@android:color/darker_gray" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="16dp"
+        android:background="@color/background_white"
+        android:elevation="8dp">
 
-    <Button
-        android:id="@+id/confirmButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="CONFIRM"
-        android:layout_marginBottom="12dp" />
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
 
-    <Button
-        android:id="@+id/backButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="BACK"
-        style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+            <TextView
+                android:id="@+id/selectedSeatText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Chưa chọn ghế"
+                android:textSize="13sp"
+                android:textColor="@color/text_secondary" />
+
+            <TextView
+                android:id="@+id/totalPriceText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0đ"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/blue_primary" />
+
+        </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/confirmButton"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:text="Tiếp tục"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            app:backgroundTint="@color/blue_primary"
+            app:cornerRadius="24dp" />
+
+    </LinearLayout>
 
 </LinearLayout>
-

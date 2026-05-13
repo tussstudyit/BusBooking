@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="10dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="0dp"
+    app:cardBackgroundColor="@color/ticket_card_bg">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <!-- ===== Cột trái: thông tin chuyến ===== -->
+        <LinearLayout
+            android:id="@+id/leftColumn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_toStartOf="@+id/rightColumn"
+            android:orientation="vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="16dp"
+            android:paddingBottom="16dp">
+
+            <!-- Mã vé -->
+            <TextView
+                android:id="@+id/ticketIdText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                android:layout_marginBottom="14dp" />
+
+            <!-- Tuyến đường -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="10dp">
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/ic_location_arrow"
+                    android:scaleType="centerInside"
+                    android:layout_marginEnd="8dp" />
+
+                <TextView
+                    android:id="@+id/routeText"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textSize="14sp"
+                    android:textColor="@color/text_primary"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+            </LinearLayout>
+
+            <!-- Giờ + Ngày -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="10dp">
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/ic_clock_outline"
+                    android:scaleType="centerInside"
+                    android:layout_marginEnd="8dp" />
+
+                <TextView
+                    android:id="@+id/departureDateTimeText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="14sp"
+                    android:textColor="@color/text_primary" />
+
+            </LinearLayout>
+
+            <!-- Loại ghế -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/ic_bus"
+                    android:scaleType="centerInside"
+                    android:layout_marginEnd="8dp" />
+
+                <TextView
+                    android:id="@+id/seatTypeText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- ===== Cột phải: trạng thái + giá ===== -->
+        <LinearLayout
+            android:id="@+id/rightColumn"
+            android:layout_width="150dp"
+            android:layout_height="match_parent"
+            android:layout_alignParentEnd="true"
+            android:orientation="vertical"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:paddingTop="16dp"
+            android:paddingBottom="16dp">
+
+            <!-- Label trạng thái -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Trạng thái"
+                android:textSize="13sp"
+                android:textColor="@color/text_secondary"
+                android:layout_marginBottom="10dp" />
+
+            <!-- Badge: Đã thanh toán (luôn xanh lá) -->
+            <TextView
+                android:id="@+id/paymentStatusBadge"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="13sp"
+                android:textColor="@color/white"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:background="@drawable/bg_badge_green"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Badge: Trạng thái chuyến (chưa đi / đã đi / đã hủy) -->
+            <TextView
+                android:id="@+id/tripStatusBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="13sp"
+                android:textColor="@color/white"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:background="@drawable/bg_badge_status"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
+                android:layout_marginBottom="16dp" />
+
+            <!-- Giá -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Giá"
+                    android:textSize="13sp"
+                    android:textColor="@color/text_secondary"
+                    android:layout_marginEnd="6dp" />
+
+                <TextView
+                    android:id="@+id/priceText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/blue_primary" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=" vnđ"
+                    android:textSize="11sp"
+                    android:textColor="@color/text_secondary" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- ===== Divider dọc nét đứt + khoét tròn 2 đầu ===== -->
+
+        <!-- Vòng tròn khoét trên (màu nền page để tạo hiệu ứng khoét) -->
+        <View
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_toStartOf="@+id/rightColumn"
+            android:layout_alignParentTop="true"
+            android:layout_marginTop="-9dp"
+            android:layout_marginStart="-9dp"
+            android:background="@drawable/circle_cutout" />
+
+        <!-- Đường nét đứt dọc -->
+        <View
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:layout_toStartOf="@+id/rightColumn"
+            android:layout_marginTop="9dp"
+            android:layout_marginBottom="9dp"
+            android:background="@drawable/divider_dashed_vertical" />
+
+        <!-- Vòng tròn khoét dưới -->
+        <View
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_toStartOf="@+id/rightColumn"
+            android:layout_alignParentBottom="true"
+            android:layout_marginBottom="-9dp"
+            android:layout_marginStart="-9dp"
+            android:background="@drawable/circle_cutout" />
+
+    </RelativeLayout>
+
+</androidx.cardview.widget.CardView>

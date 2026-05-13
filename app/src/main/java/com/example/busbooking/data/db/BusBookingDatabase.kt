@@ -10,7 +10,7 @@ import com.example.busbooking.data.entity.*
 
 @Database(
     entities = [User::class, Route::class, Bus::class, Trip::class, Seat::class, Ticket::class],
-    version = 2, // 🔥 tăng version vì đã sửa entity
+    version = 3,
     exportSchema = false
 )
 abstract class BusBookingDatabase : RoomDatabase() {
@@ -33,16 +33,38 @@ abstract class BusBookingDatabase : RoomDatabase() {
                     BusBookingDatabase::class.java,
                     "bus_booking.db"
                 )
-                    .fallbackToDestructiveMigration() // ✔ demo OK
-
-                    // 🔥 GẮN SEED DATA
+                    .fallbackToDestructiveMigration()  // ← bỏ (true) đi
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)
                             SeedDataProvider.seedDatabase(db)
                         }
-                    })
 
+                        override fun onOpen(db: SupportSQLiteDatabase) {
+                            super.onOpen(db)
+
+                            val cursor = db.query("SELECT id, origin, destination FROM routes", arrayOf<Any?>())
+                            while (cursor.moveToNext()) {
+                                android.util.Log.d("DB_CHECK", "Route: id=${cursor.getLong(0)}, origin=${cursor.getString(1)}, destination=${cursor.getString(2)}")
+                            }
+                            cursor.close()
+
+                            db.execSQL("PRAGMA foreign_keys = OFF")
+
+                            db.execSQL("DELETE FROM tickets")
+                            db.execSQL("DELETE FROM trips")
+                            db.execSQL("DELETE FROM seats")
+                            db.execSQL("DELETE FROM routes")
+                            db.execSQL("DELETE FROM buses")
+
+                            val busIds = SeedDataProvider.seedBuses(db)
+                            val routeIds = SeedDataProvider.seedRoutes(db)
+                            SeedDataProvider.seedSeats(db, busIds)
+                            SeedDataProvider.seedTrips(db, routeIds, busIds)
+
+                            db.execSQL("PRAGMA foreign_keys = ON")
+                        }
+                    })
                     .build()
                     .also { instance = it }
             }

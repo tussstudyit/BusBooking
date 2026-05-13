@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.google.ksp)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -35,6 +36,7 @@ android {
 
     buildFeatures {
         compose = true
+        viewBinding = true
     }
 }
 
@@ -70,8 +72,13 @@ dependencies {
     // Coroutines
     implementation(libs.kotlinx.coroutines)
 
+    // Kotlinx Serialization
+    implementation(libs.kotlinx.serialization.json)
+
     // Bcrypt for password hashing
     implementation(libs.bcrypt)
+
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <!-- Province Header -->
+    <LinearLayout
+        android:id="@+id/provinceHeader"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="?attr/selectableItemBackground"
+        android:paddingHorizontal="16dp">
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_route_outline"
+            android:contentDescription="Location"
+            android:scaleType="centerInside"
+            app:tint="@color/blue_primary" />
+
+        <TextView
+            android:id="@+id/provinceName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="16dp"
+            android:text="Tỉnh thành phố"
+            android:textColor="@color/text_primary"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <ImageView
+            android:id="@+id/expandIcon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_route_outline"
+            android:contentDescription="Expand"
+            android:scaleType="centerInside"
+            app:tint="@color/text_secondary" />
+
+    </LinearLayout>
+
+    <!-- Stops List (Expanded on demand) -->
+    <LinearLayout
+        android:id="@+id/stopsContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:background="@color/background_white"
+        android:paddingStart="40dp" />
+
+    <!-- Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/background_grey"
+        android:layout_marginVertical="8dp" />
+
+</LinearLayout>
+

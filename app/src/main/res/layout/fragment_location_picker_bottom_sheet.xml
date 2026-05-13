@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_bottom_sheet">
+
+    <!-- Drag handle -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="4dp"
+        android:background="@drawable/bg_drag_handle" />
+
+    <!-- Header: title căn giữa + nút Đóng -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="12dp">
+
+        <TextView
+            android:id="@+id/bottomSheetTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="Chọn điểm đi"
+            android:textColor="@color/text_primary"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/closeButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end|center_vertical"
+            android:text="Đóng"
+            android:textColor="@color/blue_primary"
+            android:textSize="14sp"
+            android:padding="4dp"
+            android:background="?attr/selectableItemBackgroundBorderless" />
+
+    </FrameLayout>
+
+    <!-- Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/background_grey" />
+
+    <!-- Search bar -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="8dp"
+        app:startIconDrawable="@drawable/ic_search"
+        app:startIconTint="@color/blue_primary"
+        app:boxBackgroundMode="outline"
+        app:cornerRadius="12dp"
+        app:boxStrokeColor="@color/blue_primary"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/searchInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Tìm kiếm tỉnh thành phố..."
+            android:inputType="text"
+            android:textSize="14sp"
+            android:imeOptions="actionSearch" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Danh sách tỉnh -->
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="500dp">
+
+        <LinearLayout
+            android:id="@+id/provincesContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="4dp"
+            android:paddingBottom="32dp" />
+
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Empty state -->
+    <TextView
+        android:id="@+id/emptyText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="32dp"
+        android:layout_marginBottom="32dp"
+        android:text="Không tìm thấy tỉnh thành phố"
+        android:textColor="@color/text_secondary"
+        android:textSize="14sp"
+        android:visibility="gone" />
+
+    <!-- Progress bar -->
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="32dp"
+        android:layout_marginBottom="32dp"
+        android:visibility="gone" />
+
+</LinearLayout>

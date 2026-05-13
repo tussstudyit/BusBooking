@@ -8,6 +8,7 @@ import com.example.busbooking.domain.models.Result
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
+import java.util.Calendar
 
 class TripRepository(
     private val tripDAO: TripDAO,
@@ -26,31 +27,47 @@ class TripRepository(
         destination: String,
         tripDate: Long
     ): Result<List<TripWithRouteAndBus>> = withContext(Dispatchers.IO) {
-
         try {
+            // Normalize về 00:00:00 local timezone (tránh lệch UTC)
+            val dayStart = Calendar.getInstance().apply {
+                timeInMillis = tripDate
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }.timeInMillis
+
+            android.util.Log.d("TripRepo", "origin=$origin dest=$destination dayStart=$dayStart")
+
             if (origin.isBlank() || destination.isBlank()) {
                 return@withContext Result.Error(
                     Exception("Invalid input"),
-                    "Origin/destination cannot be empty"
+                    "Origin/destination không được rỗng"
                 )
             }
 
             val route = routeDAO.getRouteByOriginDestination(origin, destination)
-                ?: return@withContext Result.Error(
-                    Exception("Route not found"),
-                    "No route found for this origin/destination"
-                )
+            android.util.Log.d("TripRepo", "Route found: $route")
 
-            val trips = tripDAO.getTripsForRouteAndDate(route.id, tripDate)
+            if (route == null) {
+                return@withContext Result.Error(
+                    Exception("Route not found"),
+                    "Không tìm thấy tuyến $origin → $destination"
+                )
+            }
+
+            val trips = tripDAO.getTripsForRouteAndDate(route.id, dayStart)
+            android.util.Log.d("TripRepo", "Trips found: ${trips.size}")
 
             if (trips.isNotEmpty()) {
                 Result.Success(trips)
             } else {
-                Result.Error(Exception("Empty"), "No trips available")
+                Result.Error(Exception("Empty"), "Không có chuyến nào ngày này")
             }
 
         } catch (e: Exception) {
-            Result.Error(e, "Error searching trips: ${e.message}")
+            android.util.Log.e("TripRepo", "Error: ${e.message}")
+            Result.Error(e, "Lỗi tìm kiếm: ${e.message}")
         }
     }
 

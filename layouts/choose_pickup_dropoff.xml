@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<screen id="choose_pickup_dropoff" name="ChoosePickupDropoff">
+  <toolbar>
+    <backButton action="navigateBack" />
+    <title bind="{ui.pickupDropoffTitle}" />
+    <homeButton icon="ic_home" action="navigateHome" />
+  </toolbar>
+
+  <routeSummaryCard>
+    <origin bind="{trip.origin}" />
+    <busIcon src="ic_bus" />
+    <destination bind="{trip.destination}" />
+    <dateTime bind="{trip.departureDateTime}" format="HH:mm dd/MM/yyyy" />
+  </routeSummaryCard>
+
+  <formContainer>
+    <formSection>
+      <sectionLabel bind="{ui.pickupPointLabel}" />
+      <dropdownField
+          id="pickup_location"
+          label="{ui.pickupPointPlaceholder}"
+          valueBind="{selection.pickupPoint}"
+          leadingIcon="ic_location_pin"
+          action="selectPickupPoint"
+          required="true" />
+    </formSection>
+
+    <formSection>
+      <sectionLabel bind="{ui.dropoffPointLabel}" />
+      <dropdownField
+          id="dropoff_location"
+          label="{ui.dropoffPointPlaceholder}"
+          valueBind="{selection.dropoffPoint}"
+          leadingIcon="ic_location_pin"
+          action="selectDropoffPoint"
+          required="true" />
+    </formSection>
+  </formContainer>
+
+  <validationRules>
+    <rule field="pickup_location" required="true" />
+    <rule field="dropoff_location" required="true" />
+  </validationRules>
+
+  <interactionRules>
+    <rule event="pickupSelected" condition="pickupPoint != null" action="enableDropoffField" />
+    <rule event="dropoffSelected" condition="dropoffPoint != null" action="enableProceedButton" />
+  </interactionRules>
+
+  <bottomActionBar>
+    <secondaryButton label="{ui.cancelLabel}" action="cancel" />
+    <primaryButton label="{ui.nextButtonLabel}" action="proceedToConfirmation" style="filled" />
+  </bottomActionBar>
+
+  <navigation>
+    <nextScreen on="proceedToConfirmation" target="ticket_information" />
+  </navigation>
+</screen>
+

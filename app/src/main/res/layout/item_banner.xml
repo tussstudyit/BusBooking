@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="4dp"
+    app:strokeWidth="0dp">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <!-- Background image -->
+        <ImageView
+            android:id="@+id/bannerImage"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_banner_placeholder" />
+
+        <!-- Gradient overlay -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/banner_gradient_overlay" />
+
+        <!-- Text content -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/bannerTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Uu dai he 2025"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/bannerSubtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Giam 20% cho tat ca tuyen mien Trung"
+                android:textColor="#CCFFFFFF"
+                android:textSize="12sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/bannerActionLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_marginTop="8dp"
+                android:text="Dat ngay"
+                android:textColor="@color/blue_primary"
+                android:textSize="12sp"
+                app:backgroundTint="#FFFFFF"
+                app:cornerRadius="20dp" />
+
+        </LinearLayout>
+
+    </FrameLayout>
+
+</com.google.android.material.card.MaterialCardView>

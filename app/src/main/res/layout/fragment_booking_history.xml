@@ -3,44 +3,82 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:background="@color/background_grey">
 
-    <TextView
-        android:layout_width="wrap_content"
+    <!-- Header -->
+    <RelativeLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Booking History"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="16dp" />
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp">
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="Vé của tôi"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_primary" />
+
+        <ImageButton
+            android:id="@+id/filterButton"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:src="@drawable/ic_filter"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Lọc" />
+
+    </RelativeLayout>
+
+    <!-- ProgressBar -->
     <ProgressBar
         android:id="@+id/progressBar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:visibility="gone"
-        android:layout_gravity="center" />
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="32dp"
+        android:visibility="gone" />
 
+    <!-- RecyclerView -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/historyRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="12dp"
+        android:clipToPadding="false"
+        android:scrollbars="none"
+        android:visibility="gone" />
+
+    <!-- Empty state -->
     <TextView
         android:id="@+id/emptyText"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:text="No booking history"
-        android:textAlignment="center"
         android:gravity="center"
+        android:text="Bạn chưa có lịch sử đặt vé nào"
+        android:textColor="@color/text_secondary"
+        android:textSize="16sp"
         android:visibility="gone" />
 
+    <!-- Error state -->
     <TextView
         android:id="@+id/errorText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textColor="@android:color/holo_red_dark"
-        android:visibility="gone"
-        android:layout_marginBottom="16dp" />
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/historyRecyclerView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:padding="16dp"
+        android:text="Có lỗi xảy ra, vui lòng thử lại"
+        android:textColor="@color/error"
+        android:textSize="14sp"
+        android:gravity="center"
+        android:visibility="gone" />
 
 </LinearLayout>
-

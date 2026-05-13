@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<screen id="ticket_information" name="TicketInformation">
+  <toolbar>
+    <backButton action="navigateBack" />
+    <title bind="{ui.ticketInformationTitle}" />
+    <homeButton icon="ic_home" action="navigateHome" />
+  </toolbar>
+
+  <ticketSummaryCard>
+    <routeInfo>
+      <origin bind="{ticket.origin}" label="{ui.departureLabel}" icon="ic_location_pin" />
+      <busIcon src="ic_bus" />
+      <destination bind="{ticket.destination}" label="{ui.destinationLabel}" icon="ic_location_pin" />
+    </routeInfo>
+
+    <ticketCode>
+      <label bind="{ui.ticketCodeLabel}" />
+      <code bind="{ticket.code}" copyable="true" />
+    </ticketCode>
+
+    <paymentStatus>
+      <label bind="{ui.paymentStatusLabel}" />
+      <statusBadge statusBind="{ticket.paymentStatus}" labelBind="{ticket.paymentStatusDisplay}" />
+    </paymentStatus>
+
+    <price amountBind="{ticket.totalPrice}" currencyBind="{ticket.currency}" />
+  </ticketSummaryCard>
+
+  <detailsSection>
+    <sectionHeader bind="{ui.detailsHeader}" />
+
+    <detailRow label="{ui.departurePointLabel}" valueBind="{ticket.departurePoint}" />
+    <divider style="solid" />
+
+    <detailRow label="{ui.arrivalPointLabel}" valueBind="{ticket.arrivalPoint}" />
+    <divider style="solid" />
+
+    <twoColumnRow>
+      <column>
+        <infoBox labelBind="{ui.departureTimeLabel}" valueBind="{ticket.departureTime}" format="HH:mm" />
+      </column>
+      <column>
+        <infoBox labelBind="{ui.dateLabel}" valueBind="{ticket.departureDate}" format="dd/MM/yyyy" />
+      </column>
+    </twoColumnRow>
+    <divider style="solid" />
+
+    <detailRow label="{ui.seatNumberLabel}" valueBind="{ticket.seatNumber}" />
+    <divider style="solid" />
+
+    <detailRow label="{ui.operatorLabel}" valueBind="{ticket.operator}" />
+    <divider style="solid" />
+
+    <detailRow label="{ui.busTypeLabel}" valueBind="{ticket.busType}" />
+    <divider style="dashed" />
+
+    <twoColumnRow>
+      <column>
+        <label bind="{ui.totalLabel}" />
+      </column>
+      <column>
+        <price amountBind="{ticket.totalPrice}" currencyBind="{ticket.currency}" style="highlight" />
+      </column>
+    </twoColumnRow>
+
+    <paymentMethodRow>
+      <label bind="{ui.paymentMethodLabel}" />
+      <paymentMethod bind="{ticket.paymentMethod}" />
+    </paymentMethodRow>
+  </detailsSection>
+
+  <bottomActionBar>
+    <primaryButton label="{ui.rateLabel}" action="rateBooking" style="outlined" />
+    <secondaryButton label="{ui.completeLabel}" action="completeBooking" style="filled" />
+  </bottomActionBar>
+
+  <navigation>
+    <nextScreen on="rateBooking" target="departure_point" />
+    <nextScreen on="completeBooking" target="departure_point" />
+  </navigation>
+</screen>
+

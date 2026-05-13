@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<screen id="departure_point" name="DeparturePoint">
+  <toolbar>
+    <userGreeting>
+      <avatar src="{assets.userAvatar}" />
+      <greeting bind="{user.greeting}" />
+      <subtitle bind="{ui.departureSubtitle}" />
+    </userGreeting>
+  </toolbar>
+
+  <heroBanner src="{assets.busFleetBanner}" />
+
+  <searchSection>
+    <tabBar>
+      <tab id="tab_publish" label="{ui.publishLabel}" state="active" />
+      <tab id="tab_move" label="{ui.moveLabel}" state="inactive" />
+    </tabBar>
+
+    <searchBar hint="{ui.searchHint}" leadingIcon="ic_search" action="searchLocation" />
+  </searchSection>
+
+  <groupedLocationList>
+    <group>
+      <groupHeader label="{ui.departureLabel}" icon="ic_location_pin" />
+      <listItem repeat="{data.departureLocations}">
+        <locationName bind="{location.name}" />
+        <trailingIcon icon="ic_chevron_right" />
+        <action on="tap" target="find_ticket" />
+      </listItem>
+    </group>
+
+    <group>
+      <groupHeader label="{ui.destinationLabel}" icon="ic_destination_pin" />
+      <listItem repeat="{data.destinationLocations}">
+        <locationName bind="{location.name}" />
+        <trailingIcon icon="ic_chevron_right" />
+        <action on="tap" target="find_ticket" />
+      </listItem>
+    </group>
+  </groupedLocationList>
+
+  <navigation>
+    <nextScreen on="selectDeparture" target="find_ticket" />
+  </navigation>
+</screen>
+

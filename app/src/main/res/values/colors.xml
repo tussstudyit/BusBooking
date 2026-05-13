@@ -31,5 +31,22 @@
     <!-- Status -->
     <color name="error">#D32F2F</color>
     <color name="success">#388E3C</color>
+    <color name="green_primary">#4CAF50</color>
+    <color name="red_500">#F44336</color>
+    <color name="orange_500">#FF9800</color>
+    <color name="light_gray">#F5F5F5</color>
     <color name="disabled">#BDBDBD</color>
+
+    <color name="icon_default">#9E9E9E</color>
+    <color name="icon_active">#1976D2</color>
+    <color name="background_grey">#F5F5F5</color>
+
+    <color name="ticket_card_bg">#F5F0E8</color>  <!-- beige nhạt -->
+    <color name="status_paid">#4CAF50</color>      <!-- xanh lá -->
+    <color name="status_done">#B8860B</color>      <!-- vàng đậm -->
+    <color name="status_pending">#2196F3</color>   <!-- xanh dương -->
+    <color name="divider">#CCCCCC</color>
+
+
+
 </resources>

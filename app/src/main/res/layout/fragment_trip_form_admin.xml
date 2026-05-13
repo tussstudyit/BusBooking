@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/background_grey">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -9,144 +11,121 @@
         android:orientation="vertical"
         android:padding="16dp">
 
+        <!-- Tiêu đề -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Trip Form"
-            android:textSize="24sp"
+            android:text="Chuyến đi"
+            android:textSize="20sp"
             android:textStyle="bold"
-            android:layout_marginBottom="24dp" />
+            android:textColor="@color/text_primary"
+            android:layout_marginBottom="20dp" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Route"
-            android:textStyle="bold"
-            android:textSize="14sp"
-            android:layout_marginBottom="4dp" />
-
-        <Spinner
-            android:id="@+id/routeSpinner"
+        <!-- Chọn tuyến đường -->
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginBottom="12dp"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Bus"
-            android:textStyle="bold"
-            android:textSize="14sp"
-            android:layout_marginBottom="4dp" />
+            <Spinner
+                android:id="@+id/routeSpinner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Chọn tuyến đường" />
 
-        <Spinner
-            android:id="@+id/busSpinner"
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Chọn xe -->
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginBottom="12dp"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Departure Date &amp; Time"
-            android:textStyle="bold"
-            android:textSize="14sp"
-            android:layout_marginBottom="4dp" />
+            <Spinner
+                android:id="@+id/busSpinner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Chọn xe" />
 
-        <EditText
-            android:id="@+id/departureDateInput"
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Ngày khởi hành -->
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Select departure date"
-            android:inputType="none"
-            android:focusable="false"
-            android:padding="12dp"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginBottom="12dp"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Departure Time"
-            android:textStyle="bold"
-            android:textSize="14sp"
-            android:layout_marginBottom="4dp" />
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/departureDateInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Ngày khởi hành"
+                android:inputType="date" />
 
-        <EditText
-            android:id="@+id/departureTimeInput"
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Giờ khởi hành -->
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Select departure time"
-            android:inputType="none"
-            android:focusable="false"
-            android:padding="12dp"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginBottom="12dp"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Arrival Time"
-            android:textStyle="bold"
-            android:textSize="14sp"
-            android:layout_marginBottom="4dp" />
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/departureTimeInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Giờ khởi hành"
+                android:inputType="time" />
 
-        <EditText
-            android:id="@+id/arrivalTimeInput"
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Giờ đến -->
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Select arrival time"
-            android:inputType="none"
-            android:focusable="false"
-            android:padding="12dp"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginBottom="12dp"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Price per Seat"
-            android:textStyle="bold"
-            android:textSize="14sp"
-            android:layout_marginBottom="4dp" />
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/arrivalTimeInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Giờ đến"
+                android:inputType="time" />
 
-        <EditText
-            android:id="@+id/priceInput"
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Giá -->
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Enter price per seat"
-            android:inputType="numberDecimal"
-            android:padding="12dp"
-            android:layout_marginBottom="24dp" />
+            android:layout_marginBottom="20dp"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
-        <ProgressBar
-            android:id="@+id/progressBar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:visibility="gone"
-            android:layout_gravity="center"
-            android:layout_marginBottom="16dp" />
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/priceInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Giá"
+                android:inputType="numberDecimal" />
 
-        <TextView
-            android:id="@+id/errorText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:visibility="gone"
-            android:textColor="@android:color/holo_red_dark"
-            android:layout_marginBottom="16dp" />
+        </com.google.android.material.textfield.TextInputLayout>
 
-        <Button
+        <!-- Nút lưu -->
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/saveButton"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="SAVE"
-            android:layout_marginBottom="12dp" />
-
-        <Button
-            android:id="@+id/backButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="BACK"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+            android:layout_height="48dp"
+            android:text="Lưu"
+            android:textSize="16sp"
+            app:backgroundTint="@color/blue_primary"
+            app:cornerRadius="12dp" />
 
     </LinearLayout>
 
-</ScrollView>
+</androidx.core.widget.NestedScrollView>
 
