@@ -2,6 +2,8 @@ package com.example.busbooking.presentation.ui
 
 import android.app.DatePickerDialog
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -48,7 +50,6 @@ class HomeFragment : Fragment() {
     }
 
     // ─── Views ────────────────────────────────────────────────────────────────
-
     private lateinit var swipeRefresh: SwipeRefreshLayout
     private lateinit var progressBar: ProgressBar
     private lateinit var userNameText: TextView
@@ -73,18 +74,45 @@ class HomeFragment : Fragment() {
     private lateinit var promotionsRecyclerView: RecyclerView
 
     // ─── Adapters ─────────────────────────────────────────────────────────────
-
     private lateinit var bannerAdapter: BannerAdapter
     private lateinit var upcomingAdapter: UpcomingTripAdapter
     private lateinit var popularRouteAdapter: PopularRouteAdapter
     private lateinit var promotionAdapter: PromotionAdapter
 
+    // ─── State ────────────────────────────────────────────────────────────────
     private var selectedDate: Long = System.currentTimeMillis()
     private var selectedReturnDate: Long = 0L
     private var isRoundTrip: Boolean = false
+    private var originTag: String = ""
+    private var destinationTag: String = ""
+
+    // ─── Real-time date updater ───────────────────────────────────────────────
+    private val dateHandler = Handler(Looper.getMainLooper())
+    private val dateUpdater = object : Runnable {
+        override fun run() {
+            val todayStart = Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }.timeInMillis
+
+            if (selectedDate < todayStart) {
+                selectedDate = todayStart
+                datePickerButton.text = formatDate(selectedDate)
+                if (selectedReturnDate in 1..<selectedDate) {
+                    selectedReturnDate = 0L
+                    returnDatePickerButton.text = "Chọn ngày"
+                }
+            }
+
+            val now = System.currentTimeMillis()
+            val nextMidnight = todayStart + 24 * 60 * 60 * 1000L
+            dateHandler.postDelayed(this, nextMidnight - now)
+        }
+    }
 
     // ─── Lifecycle ────────────────────────────────────────────────────────────
-
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -93,14 +121,26 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         bindViews(view)
+
+        datePickerButton.text = formatDate(selectedDate)
+        dateHandler.post(dateUpdater)
+
+        // Khôi phục lại text nếu đã chọn trước đó
+        if (originTag.isNotEmpty()) originInput.setText(originTag)
+        if (destinationTag.isNotEmpty()) destinationInput.setText(destinationTag)
+
         setupAdapters()
         setupListeners()
         observeViewModel()
         viewModel.loadHome()
     }
 
-    // ─── Bind views ───────────────────────────────────────────────────────────
+    override fun onDestroyView() {
+        super.onDestroyView()
+        dateHandler.removeCallbacks(dateUpdater)
+    }
 
+    // ─── Bind views ───────────────────────────────────────────────────────────
     private fun bindViews(view: View) {
         swipeRefresh              = view.findViewById(R.id.swipeRefresh)
         progressBar               = view.findViewById(R.id.progressBar)
@@ -132,7 +172,6 @@ class HomeFragment : Fragment() {
     }
 
     // ─── Adapters ─────────────────────────────────────────────────────────────
-
     private fun setupAdapters() {
         bannerAdapter = BannerAdapter()
         bannerViewPager.adapter = bannerAdapter
@@ -150,7 +189,9 @@ class HomeFragment : Fragment() {
 
         popularRouteAdapter = PopularRouteAdapter { route ->
             originInput.setText(route.origin)
+            originTag = route.origin
             destinationInput.setText(route.destination)
+            destinationTag = route.destination
         }
         popularRoutesRecyclerView.layoutManager =
             LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
@@ -161,11 +202,9 @@ class HomeFragment : Fragment() {
     }
 
     // ─── Listeners ────────────────────────────────────────────────────────────
-
     private fun setupListeners() {
         swipeRefresh.setOnRefreshListener { viewModel.refresh() }
 
-        // Một chiều / Khứ hồi
         oneWayButton.setOnClickListener {
             isRoundTrip = false
             returnDateContainer.visibility = View.GONE
@@ -190,6 +229,7 @@ class HomeFragment : Fragment() {
                 .newInstance(title = "Chọn điểm đi") { stop ->
                     originInput.setText(stop.name)
                     originInput.tag = stop.province
+                    originTag = stop.province
                 }
                 .show(childFragmentManager, LocationPickerBottomSheet.TAG)
         }
@@ -199,24 +239,27 @@ class HomeFragment : Fragment() {
                 .newInstance(title = "Chọn điểm đến") { stop ->
                     destinationInput.setText(stop.name)
                     destinationInput.tag = stop.province
+                    destinationTag = stop.province
                 }
                 .show(childFragmentManager, LocationPickerBottomSheet.TAG)
         }
 
         swapButton.setOnClickListener {
             val tmpText = originInput.text.toString()
-            val tmpTag  = originInput.tag
+            val tmpTag  = originTag
+
             originInput.setText(destinationInput.text.toString())
-            originInput.tag = destinationInput.tag
+            originInput.tag = destinationTag
+            originTag = destinationTag
+
             destinationInput.setText(tmpText)
             destinationInput.tag = tmpTag
+            destinationTag = tmpTag
         }
 
         searchButton.setOnClickListener {
-            val origin      = originInput.tag?.toString()?.trim() ?: ""
-            val destination = destinationInput.tag?.toString()?.trim() ?: ""
-            android.util.Log.d("HomeDebug", "tag origin='$origin' tag dest='$destination'")
-            android.util.Log.d("HomeDebug", "text origin='${originInput.text}' text dest='${destinationInput.text}'")
+            val origin      = originTag.trim()
+            val destination = destinationTag.trim()
 
             if (origin.isEmpty() || destination.isEmpty()) {
                 Toast.makeText(requireContext(), "Vui lòng nhập điểm đi và điểm đến", Toast.LENGTH_SHORT).show()
@@ -255,7 +298,6 @@ class HomeFragment : Fragment() {
     }
 
     // ─── Observe ──────────────────────────────────────────────────────────────
-
     private fun observeViewModel() {
         viewModel.homeState.observe(viewLifecycleOwner) { state ->
             swipeRefresh.isRefreshing = false
@@ -295,6 +337,8 @@ class HomeFragment : Fragment() {
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
+    private fun formatDate(millis: Long): String =
+        SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date(millis))
 
     private fun buildGreeting(): String {
         val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
@@ -310,9 +354,7 @@ class HomeFragment : Fragment() {
         DatePickerDialog(requireContext(), { _, year, month, day ->
             cal.set(year, month, day, 0, 0, 0)
             selectedDate = cal.timeInMillis
-            val label = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date(selectedDate))
-            datePickerButton.text = label
-            // Reset ngày về nếu nhỏ hơn ngày đi
+            datePickerButton.text = formatDate(selectedDate)
             if (selectedReturnDate in 1..<selectedDate) {
                 selectedReturnDate = 0L
                 returnDatePickerButton.text = "Chọn ngày"
@@ -332,8 +374,7 @@ class HomeFragment : Fragment() {
         DatePickerDialog(requireContext(), { _, year, month, day ->
             cal.set(year, month, day, 0, 0, 0)
             selectedReturnDate = cal.timeInMillis
-            val label = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date(selectedReturnDate))
-            returnDatePickerButton.text = label
+            returnDatePickerButton.text = formatDate(selectedReturnDate)
         },
             cal.get(Calendar.YEAR),
             cal.get(Calendar.MONTH),
@@ -345,7 +386,6 @@ class HomeFragment : Fragment() {
     }
 
     // ─── Dots ─────────────────────────────────────────────────────────────────
-
     private fun setupDots(count: Int) {
         dotsContainer.removeAllViews()
         repeat(count) { i ->

@@ -333,15 +333,24 @@ object SeedDataProvider {
     // -------------------------------------------------------
     // Users
     // -------------------------------------------------------
-    private fun seedUsers(db: SupportSQLiteDatabase) {
+    fun seedUsers(db: SupportSQLiteDatabase) {
         val adminPw = PasswordHasher.hash("123")
         val userPw  = PasswordHasher.hash("123")
-        db.execSQL("INSERT OR REPLACE INTO users (id,name,email,password,phone,role) VALUES (?,?,?,?,?,?)",
-            arrayOf<Any?>(1,"Admin","admin@bus.com",adminPw,"0123456789","ADMIN"))
-        db.execSQL("INSERT OR REPLACE INTO users (id,name,email,password,phone,role) VALUES (?,?,?,?,?,?)",
-            arrayOf<Any?>(2,"Nguyễn Văn A","user@gmail.com",userPw,"0987654321","USER"))
-        db.execSQL("INSERT OR REPLACE INTO users (id,name,email,password,phone,role) VALUES (?,?,?,?,?,?)",
-            arrayOf<Any?>(3,"Trần Thị B","userb@gmail.com",userPw,"0912345678","USER"))
+        
+        try {
+            db.execSQL("INSERT OR REPLACE INTO users (id,name,email,password,phone,role) VALUES (?,?,?,?,?,?)",
+                arrayOf<Any?>(1,"Admin","admin@bus.com",adminPw,"0123456789","ADMIN"))
+            println("✅ Admin user seeded: ID=1, Phone=0123456789, Role=ADMIN")
+
+            db.execSQL("INSERT OR REPLACE INTO users (id,name,email,password,phone,role) VALUES (?,?,?,?,?,?)",
+                arrayOf<Any?>(2,"Nguyễn Văn A","user@gmail.com",userPw,"0987654321","USER"))
+
+            db.execSQL("INSERT OR REPLACE INTO users (id,name,email,password,phone,role) VALUES (?,?,?,?,?,?)",
+                arrayOf<Any?>(3,"Trần Thị B","userb@gmail.com",userPw,"0912345678","USER"))
+        } catch (e: Exception) {
+            println("❌ Error seeding users: ${e.message}")
+            e.printStackTrace()
+        }
     }
 
     // -------------------------------------------------------
@@ -436,7 +445,7 @@ object SeedDataProvider {
         var tripId  = 1
         var busIdx  = 0   // round-robin qua fleet
 
-        for (dayOffset in 1..3) {
+        for (dayOffset in 0..5) {
             ROUTES.forEachIndexed { routeIdx, route ->
                 val routeId  = routeIds[routeIdx] ?: return@forEachIndexed
                 val slots    = slotsFor(route.durationMs)

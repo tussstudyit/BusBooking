@@ -1,6 +1,7 @@
 package com.example.busbooking.domain.repository
 
 import com.example.busbooking.data.dao.RouteDAO
+import com.example.busbooking.data.dao.SeatDAO
 import com.example.busbooking.data.dao.TripDAO
 import com.example.busbooking.data.entity.Trip
 import com.example.busbooking.data.relations.TripWithRouteAndBus
@@ -12,15 +13,12 @@ import java.util.Calendar
 
 class TripRepository(
     private val tripDAO: TripDAO,
-    private val routeDAO: RouteDAO
+    private val routeDAO: RouteDAO,
+    private val seatDAO: SeatDAO  // ✅ thêm SeatDAO
 ) {
 
     /**
      * Search trips by origin, destination, and date
-     *
-     * @param origin Starting location
-     * @param destination Ending location
-     * @param tripDate Trip date as timestamp (Long)
      */
     suspend fun searchTrips(
         origin: String,
@@ -28,7 +26,6 @@ class TripRepository(
         tripDate: Long
     ): Result<List<TripWithRouteAndBus>> = withContext(Dispatchers.IO) {
         try {
-            // Normalize về 00:00:00 local timezone (tránh lệch UTC)
             val dayStart = Calendar.getInstance().apply {
                 timeInMillis = tripDate
                 set(Calendar.HOUR_OF_DAY, 0)
@@ -73,9 +70,6 @@ class TripRepository(
 
     /**
      * Get upcoming trips for a specific route
-     *
-     * @param routeId Route identifier
-     * @param fromDate Starting date (timestamp)
      */
     suspend fun getUpcomingTripsForRoute(
         routeId: Long,
@@ -83,13 +77,11 @@ class TripRepository(
     ): Result<List<TripWithRouteAndBus>> = withContext(Dispatchers.IO) {
         try {
             val trips = tripDAO.getUpcomingTripsForRoute(routeId, fromDate)
-
             if (trips.isNotEmpty()) {
                 Result.Success(trips)
             } else {
                 Result.Error(Exception("Empty"), "No upcoming trips")
             }
-
         } catch (e: Exception) {
             Result.Error(e, "Error fetching upcoming trips: ${e.message}")
         }
@@ -98,19 +90,32 @@ class TripRepository(
     /**
      * Get trip by ID with full details
      */
-    suspend fun getTripById(tripId: Long): Result<TripWithRouteAndBus> = 
+    suspend fun getTripById(tripId: Long): Result<TripWithRouteAndBus> =
         withContext(Dispatchers.IO) {
             try {
                 val trip = tripDAO.getTripById(tripId)
-
                 if (trip != null) {
                     Result.Success(trip)
                 } else {
                     Result.Error(Exception("Not found"), "Trip not found")
                 }
-
             } catch (e: Exception) {
                 Result.Error(e, "Error fetching trip: ${e.message}")
+            }
+        }
+
+    /**
+     * ✅ Đếm số ghế còn trống cho một chuyến
+     * Dùng: tổng ghế của xe - ghế đã được đặt (CONFIRMED/PENDING)
+     */
+    suspend fun getAvailableSeatsCount(tripId: Long, busId: Long): Result<Int> =
+        withContext(Dispatchers.IO) {
+            try {
+                val total  = seatDAO.getSeatCountForBus(busId)
+                val booked = seatDAO.getBookedSeatCountForTrip(tripId)
+                Result.Success((total - booked).toInt().coerceAtLeast(0))
+            } catch (e: Exception) {
+                Result.Error(e, "Lỗi đếm ghế: ${e.message}")
             }
         }
 
@@ -135,15 +140,12 @@ class TripRepository(
                 tripDate = tripDate,
                 status = "SCHEDULED"
             )
-
             val id = tripDAO.insertTrip(trip)
-
             if (id > 0) {
                 Result.Success(id)
             } else {
                 Result.Error(Exception("Insert failed"), "Could not create trip")
             }
-
         } catch (e: Exception) {
             Result.Error(e, "Error creating trip: ${e.message}")
         }

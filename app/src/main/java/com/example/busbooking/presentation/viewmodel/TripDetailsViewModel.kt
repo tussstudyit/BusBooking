@@ -11,7 +11,6 @@ import kotlinx.coroutines.launch
 
 /**
  * ViewModel cho TripDetailsFragment.
- * Chỉ expose một trip duy nhất, không cần TripState toàn bộ.
  */
 class TripDetailsViewModel(
     private val tripRepository: TripRepository
@@ -19,6 +18,10 @@ class TripDetailsViewModel(
 
     private val _trip = MutableLiveData<TripWithRouteAndBus?>(null)
     val trip: LiveData<TripWithRouteAndBus?> = _trip
+
+    // ✅ Số ghế còn trống (-1 = chưa load)
+    private val _availableSeats = MutableLiveData<Int>(-1)
+    val availableSeats: LiveData<Int> = _availableSeats
 
     private val _isLoading = MutableLiveData(false)
     val isLoading: LiveData<Boolean> = _isLoading
@@ -34,6 +37,13 @@ class TripDetailsViewModel(
             when (val result = tripRepository.getTripById(tripId)) {
                 is Result.Success -> {
                     _trip.value = result.data
+
+                    // ✅ Sau khi có trip, load luôn số ghế trống
+                    val busId = result.data.bus.id
+                    when (val seatsResult = tripRepository.getAvailableSeatsCount(tripId, busId)) {
+                        is Result.Success -> _availableSeats.value = seatsResult.data
+                        else -> _availableSeats.value = 0
+                    }
                 }
                 is Result.Error -> {
                     _error.value = result.message

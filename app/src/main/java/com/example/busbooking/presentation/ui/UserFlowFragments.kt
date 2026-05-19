@@ -498,8 +498,8 @@ class SeatSelectionFragment : Fragment() {
 
         viewModel.setTripPrice(tripPrice)
 
-        val rv1 = view.findViewById<RecyclerView>(R.id.seatsFloor1RecyclerView)
-        val rv2 = view.findViewById<RecyclerView>(R.id.seatsFloor2RecyclerView)
+        val rv1              = view.findViewById<RecyclerView>(R.id.seatsFloor1RecyclerView)
+        val rv2              = view.findViewById<RecyclerView>(R.id.seatsFloor2RecyclerView)
         val selectedSeatText = view.findViewById<TextView>(R.id.selectedSeatText)
         val totalPriceText   = view.findViewById<TextView>(R.id.totalPriceText)
         val confirmButton    = view.findViewById<Button>(R.id.confirmButton)
@@ -512,41 +512,44 @@ class SeatSelectionFragment : Fragment() {
         rv1.adapter = adapterFloor1
         rv2.adapter = adapterFloor2
 
+        // ── Observe ghế ──────────────────────────────────────────────────────
         viewModel.seats.observe(viewLifecycleOwner) { seats ->
             val floor1 = seats.filter { it.floor == 1 }
             val floor2 = seats.filter { it.floor == 2 }
-            adapterFloor1.submitList(floor1)
-            adapterFloor2.submitList(floor2)
+            adapterFloor1.submitSeats(floor1)
+            adapterFloor2.submitSeats(floor2)
         }
 
+        // ── Observe ghế đã chọn ───────────────────────────────────────────────
         viewModel.selectedSeats.observe(viewLifecycleOwner) { selected ->
             adapterFloor1.setSelectedSeats(selected)
             adapterFloor2.setSelectedSeats(selected)
-            if (selected.isEmpty()) {
-                selectedSeatText.text = "Chưa chọn ghế"
-            } else {
-                selectedSeatText.text = "Ghế: ${selected.joinToString(", ") { it.seatNumber }}"
-            }
+            selectedSeatText.text = "x${selected.size}"
         }
 
+        // ── Observe tổng tiền ─────────────────────────────────────────────────
         viewModel.totalPrice.observe(viewLifecycleOwner) { price ->
-            totalPriceText.text = "${String.format("%,.0f", price)}đ"
+            totalPriceText.text = if (price == 0.0) "  0 vnđ"
+            else "  ${String.format("%,.0f", price)} vnđ"
         }
 
+        // ── Observe kết quả đặt vé ────────────────────────────────────────────
         viewModel.bookingResult.observe(viewLifecycleOwner) { ticketIds ->
             ticketIds ?: return@observe
-            // Navigate đến confirmation, truyền ticketId đầu tiên hoặc list
             val bundle = Bundle().apply { putLong("ticketId", ticketIds.first()) }
             findNavController().navigate(
                 R.id.action_seatSelectionFragment_to_bookingConfirmationFragment, bundle
             )
         }
 
+        // ── Observe lỗi ───────────────────────────────────────────────────────
         viewModel.error.observe(viewLifecycleOwner) { msg ->
             msg ?: return@observe
             Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+            viewModel.clearError()
         }
 
+        // ── Confirm button ────────────────────────────────────────────────────
         confirmButton.setOnClickListener {
             if (viewModel.selectedSeats.value.isNullOrEmpty()) {
                 Toast.makeText(requireContext(), "Vui lòng chọn ghế", Toast.LENGTH_SHORT).show()
@@ -582,33 +585,76 @@ class BookingConfirmationFragment : Fragment() {
             return
         }
 
-        val ticketIdText: TextView    = view.findViewById(R.id.ticketIdText)
-        val routeText: TextView       = view.findViewById(R.id.routeText)
-        val seatText: TextView        = view.findViewById(R.id.seatText)
-        val priceText: TextView       = view.findViewById(R.id.priceText)
-        val statusText: TextView      = view.findViewById(R.id.statusText)
+        // ── Bind views theo đúng ID trong fragment_booking_confirmation.xml ──
+        val originCityText      = view.findViewById<TextView>(R.id.originCityText)
+        val originStationText   = view.findViewById<TextView>(R.id.originStationText)
+        val destinationCityText = view.findViewById<TextView>(R.id.destinationCityText)
+        val destinationStation  = view.findViewById<TextView>(R.id.destinationStationText)
+        val ticketIdText        = view.findViewById<TextView>(R.id.ticketIdText)
+        val statusText          = view.findViewById<TextView>(R.id.statusText)
+        val priceText           = view.findViewById<TextView>(R.id.priceText)
+        val pickupTimeText      = view.findViewById<TextView>(R.id.pickupTimeText)
+        val pickupDateText      = view.findViewById<TextView>(R.id.pickupDateText)
+        val quantityText        = view.findViewById<TextView>(R.id.quantityText)
+        val seatText            = view.findViewById<TextView>(R.id.seatText)
+        val pickupPointText     = view.findViewById<TextView>(R.id.pickupPointText)
+        val dropoffPointText    = view.findViewById<TextView>(R.id.dropoffPointText)
+        val totalPriceText      = view.findViewById<TextView>(R.id.totalPriceText)
+        val paymentMethodText   = view.findViewById<TextView>(R.id.paymentMethodText)
+        val viewTicketsButton   = view.findViewById<Button>(R.id.viewTicketsButton)
 
-        val viewTicketsButton: Button = view.findViewById(R.id.viewTicketsButton)
-
-        val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+        val timeFmt = SimpleDateFormat("HH:mm", Locale.getDefault())
+        val dateFmt = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
 
         viewModel.ticket.observe(viewLifecycleOwner) { details ->
             details ?: return@observe
-            // details là TicketDetails — truy cập qua các relation
+
             val ticket = details.ticket
             val route  = details.tripWithRouteAndBus.route
             val trip   = details.tripWithRouteAndBus.trip
             val seat   = details.seat
 
-            ticketIdText.text    = "Vé #${ticket.id}"
-            routeText.text       = "${route.origin} → ${route.destination}"
-            seatText.text        = "Ghế: ${seat.seatNumber}"
-            priceText.text       = "Giá: ${String.format("%,.0f", trip.price)} VNĐ"
-            statusText.text      = "Trạng thái: ${ticket.status}"
+            // Tuyến đường
+            originCityText.text      = route.origin
+            originStationText.text   = ""          // nếu có stop name thì điền vào đây
+            destinationCityText.text = route.destination
+            destinationStation.text  = ""
+
+            // Chi tiết vé
+            ticketIdText.text     = "#${ticket.id}"
+            statusText.text       = when (ticket.status) {
+                "CONFIRMED" -> "Đã xác nhận"
+                "PENDING"   -> "Chờ xác nhận"
+                "CANCELLED" -> "Đã hủy"
+                else        -> ticket.status
+            }
+            priceText.text        = "${String.format("%,.0f", trip.price)} VNĐ"
+
+            // Giờ đón
+            pickupTimeText.text   = timeFmt.format(Date(trip.departureTime))
+            pickupDateText.text   = dateFmt.format(Date(trip.tripDate))
+
+            // Số lượng (luôn là 1 vé / 1 ghế)
+            quantityText.text     = "1 vé"
+
+            // Ghế
+            seatText.text         = seat.seatNumber
+
+            // Điểm đón / trả (dùng tên route nếu không có stop cụ thể)
+            pickupPointText.text  = route.origin
+            dropoffPointText.text = route.destination
+
+            // Tổng tiền
+            totalPriceText.text   = "${String.format("%,.0f", trip.price)} VNĐ"
+
+            // Hình thức thanh toán
+            paymentMethodText.text = "Thanh toán khi lên xe"
         }
 
         viewTicketsButton.setOnClickListener {
-            findNavController().navigate(R.id.action_bookingConfirmationFragment_to_myTicketsFragment)
+            findNavController().navigate(
+                R.id.action_bookingConfirmationFragment_to_myTicketsFragment
+            )
         }
 
         viewModel.loadTicket(ticketId)

@@ -43,13 +43,25 @@ abstract class BusBookingDatabase : RoomDatabase() {
                         override fun onOpen(db: SupportSQLiteDatabase) {
                             super.onOpen(db)
 
+                            db.execSQL("PRAGMA foreign_keys = OFF")
+
+                            // Ensure users table has admin account
+                            val userCursor = db.query("SELECT COUNT(*) FROM users WHERE role = 'ADMIN'", arrayOf<Any?>())
+                            userCursor.moveToFirst()
+                            val adminCount = userCursor.getLong(0)
+                            userCursor.close()
+
+                            if (adminCount == 0L) {
+                                // No admin found, seed admin account
+                                SeedDataProvider.seedUsers(db)
+                            }
+
                             val cursor = db.query("SELECT id, origin, destination FROM routes", arrayOf<Any?>())
                             while (cursor.moveToNext()) {
                                 android.util.Log.d("DB_CHECK", "Route: id=${cursor.getLong(0)}, origin=${cursor.getString(1)}, destination=${cursor.getString(2)}")
                             }
                             cursor.close()
 
-                            db.execSQL("PRAGMA foreign_keys = OFF")
 
                             db.execSQL("DELETE FROM tickets")
                             db.execSQL("DELETE FROM trips")

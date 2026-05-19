@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Icon mũi xe — dùng cho header "Tầng 1 / Tầng 2"
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Thân xe -->
+    <path
+        android:fillColor="#4A90D9"
+        android:pathData="
+            M3,6 Q3,4 5,4 L19,4 Q21,4 21,6
+            L21,17 Q21,19 19,19 L5,19 Q3,19 3,17 Z" />
+
+    <!-- Kính trước (windshield) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.85"
+        android:pathData="M5,6 L19,6 L19,12 Q19,13 18,13 L6,13 Q5,13 5,12 Z" />
+
+    <!-- Bánh trái -->
+    <path
+        android:fillColor="#333333"
+        android:pathData="M5,19 Q5,22 7,22 Q9,22 9,19 Z" />
+
+    <!-- Bánh phải -->
+    <path
+        android:fillColor="#333333"
+        android:pathData="M15,19 Q15,22 17,22 Q19,22 19,19 Z" />
+
+    <!-- Đèn trái -->
+    <path
+        android:fillColor="#FFD700"
+        android:pathData="M4,14 L7,14 L7,16 L4,16 Z" />
+
+    <!-- Đèn phải -->
+    <path
+        android:fillColor="#FFD700"
+        android:pathData="M17,14 L20,14 L20,16 L17,16 Z" />
+
+</vector>

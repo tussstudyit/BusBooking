@@ -1,157 +1,160 @@
 package com.example.busbooking.presentation.adapter
 
-import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.busbooking.R
 import com.example.busbooking.data.entity.Seat
-import com.google.android.material.card.MaterialCardView
 
 class SeatAdapter(
-    private val bookedSeatIds: Set<Long> = emptySet(),
     private val onSeatClick: (Seat) -> Unit
-) : ListAdapter<Seat, SeatAdapter.SeatViewHolder>(DiffCallback) {
+) : ListAdapter<SeatItem, RecyclerView.ViewHolder>(SeatItemDiff) {
 
-    private val selectedSeatIds = mutableSetOf<Long>()
+    private var selectedSeats: Set<Long> = emptySet()
+    private var bookedSeatIds: Set<Long> = emptySet()
 
     fun setSelectedSeats(seats: List<Seat>) {
-        selectedSeatIds.clear()
-        selectedSeatIds.addAll(seats.map { it.id })
+        selectedSeats = seats.map { it.id }.toSet()
         notifyDataSetChanged()
     }
 
-    inner class SeatViewHolder(itemView: View) :
-        RecyclerView.ViewHolder(itemView) {
-
-        val seatLabel: TextView =
-            itemView.findViewById(R.id.seatLabel)
-
-        val seatCard: MaterialCardView =
-            itemView.findViewById(R.id.seatCard)
+    fun setBookedSeats(seats: List<Seat>) {
+        bookedSeatIds = seats.map { it.id }.toSet()
+        notifyDataSetChanged()
     }
 
-    override fun onCreateViewHolder(
-        parent: ViewGroup,
-        viewType: Int
-    ): SeatViewHolder {
-
-        val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_seat, parent, false)
-
-        return SeatViewHolder(view)
+    /**
+     * Sắp xếp ghế theo layout xe giường nằm:
+     * Cột 0 (trái): ghế lẻ  → 1,3,6,9,12,15...
+     * Cột 1 (giữa): lối đi  → placeholder
+     * Cột 2 (phải): ghế chẵn → 2,5,8,11,14,17...
+     * Cột 1 hàng 1: ghế 4,7,10,13,16
+     */
+    fun submitSeats(seats: List<Seat>) {
+        val floor1 = seats.filter { it.floor == 1 }.sortedBy { it.seatNumber }
+        val floor2 = seats.filter { it.floor == 2 }.sortedBy { it.seatNumber }
+        submitList(buildSeatItems(floor1) + buildSeatItems(floor2))
     }
 
-    override fun onBindViewHolder(holder: SeatViewHolder, position: Int) {
+    private fun buildSeatItems(seats: List<Seat>): List<SeatItem> {
+        // Map seatNumber → Seat
+        val seatMap = seats.associateBy { it.seatNumber }
 
-        val seat = getItem(position)
+        // Lấy số hàng tối đa
+        val maxRow = seats.maxOfOrNull {
+            it.seatNumber.filter { c -> c.isDigit() }.toIntOrNull() ?: 0
+        } ?: 0
 
-        val isBooked   = seat.id in bookedSeatIds
-        val isSelected = seat.id in selectedSeatIds
+        val items = mutableListOf<SeatItem>()
 
-        holder.seatLabel.text = seat.seatNumber
+        // Layout 3 cột: [trái] [giữa] [phải]
+        // Hàng 1: A01(trái), EMPTY(giữa), A02(phải)
+        // Hàng 2: A03(trái), A04(giữa),  A05(phải)
+        // Hàng 3: A06(trái), EMPTY(giữa), A07(phải) ...
 
-        when {
+        var row = 1
+        var seatIdx = 1
 
-            // =====================
-            // ĐÃ BÁN
-            // =====================
+        while (seatIdx <= maxRow) {
+            val prefix = if (seats.firstOrNull()?.seatNumber?.startsWith("A") == true) "A" else "B"
 
-            isBooked -> {
+            // Hàng lẻ: trái + EMPTY + phải
+            val leftNum  = String.format("%02d", seatIdx)
+            val rightNum = String.format("%02d", seatIdx + 1)
 
-                holder.seatCard.setCardBackgroundColor(
-                    Color.parseColor("#E0E0E0")
-                )
+            items.add(seatMap["$prefix$leftNum"]?.let { SeatItem.SeatCell(it) } ?: SeatItem.Empty)
+            items.add(SeatItem.Empty) // lối đi
+            items.add(seatMap["$prefix$rightNum"]?.let { SeatItem.SeatCell(it) } ?: SeatItem.Empty)
 
-                holder.seatCard.strokeColor =
-                    Color.parseColor("#E0E0E0")
+            seatIdx += 2
 
-                holder.seatLabel.setTextColor(Color.GRAY)
-
-                holder.itemView.isEnabled = false
+            // Hàng giữa (cột giữa có ghế)
+            if (seatIdx <= maxRow) {
+                val midNum = String.format("%02d", seatIdx)
+                items.add(SeatItem.Empty)
+                items.add(seatMap["$prefix$midNum"]?.let { SeatItem.SeatCell(it) } ?: SeatItem.Empty)
+                items.add(SeatItem.Empty)
+                seatIdx += 1
             }
 
-            // =====================
-            // ĐANG CHỌN
-            // =====================
-
-            isSelected -> {
-
-                holder.seatCard.setCardBackgroundColor(
-                    Color.parseColor("#FF4DA6")
-                )
-
-                holder.seatCard.strokeColor =
-                    Color.parseColor("#FF4DA6")
-
-                holder.seatLabel.setTextColor(Color.WHITE)
-
-                holder.itemView.isEnabled = true
-            }
-
-            // =====================
-            // CÒN TRỐNG
-            // =====================
-
-            else -> {
-
-                holder.seatCard.setCardBackgroundColor(Color.WHITE)
-
-                holder.seatCard.strokeColor =
-                    Color.parseColor("#4CAF50")
-
-                holder.seatLabel.setTextColor(Color.BLACK)
-
-                holder.itemView.isEnabled = true
-            }
+            row++
         }
 
-        holder.itemView.setOnClickListener {
+        return items
+    }
 
-            if (isBooked) return@setOnClickListener
+    override fun getItemViewType(position: Int) =
+        if (getItem(position) is SeatItem.SeatCell) 0 else 1
 
-            if (isSelected) {
-                selectedSeatIds.remove(seat.id)
-            } else {
-                selectedSeatIds.add(seat.id)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return if (viewType == 0) {
+            val view = LayoutInflater.from(parent.context)
+                .inflate(R.layout.item_seat, parent, false)
+            SeatViewHolder(view)
+        } else {
+            val view = View(parent.context).apply {
+                layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
             }
+            EmptyViewHolder(view)
+        }
+    }
 
-            notifyItemChanged(position)
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        if (holder is SeatViewHolder) {
+            holder.bind((getItem(position) as SeatItem.SeatCell).seat)
+        }
+    }
 
-            onSeatClick(seat)
+    inner class SeatViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val seatIcon: ImageView  = itemView.findViewById(R.id.seatIcon)
+        private val seatNumber: TextView = itemView.findViewById(R.id.seatNumberText)
 
-            // animation click
-            holder.itemView.animate()
-                .scaleX(0.9f)
-                .scaleY(0.9f)
-                .setDuration(80)
-                .withEndAction {
-                    holder.itemView.animate()
-                        .scaleX(1f)
-                        .scaleY(1f)
-                        .duration = 80
+        fun bind(seat: Seat) {
+            seatNumber.text = seat.seatNumber
+            val isBooked   = seat.id in bookedSeatIds
+            val isSelected = seat.id in selectedSeats
+
+            when {
+                isBooked -> {
+                    seatIcon.setImageResource(R.drawable.ic_seat_booked)
+                    itemView.isEnabled = false
+                    itemView.setOnClickListener(null)
                 }
+                isSelected -> {
+                    seatIcon.setImageResource(R.drawable.ic_seat_selected)
+                    itemView.isEnabled = true
+                    itemView.setOnClickListener { onSeatClick(seat) }
+                }
+                else -> {
+                    seatIcon.setImageResource(R.drawable.ic_seat_available)
+                    itemView.isEnabled = true
+                    itemView.setOnClickListener { onSeatClick(seat) }
+                }
+            }
         }
     }
 
-    companion object {
+    class EmptyViewHolder(view: View) : RecyclerView.ViewHolder(view)
 
-        private val DiffCallback =
-            object : DiffUtil.ItemCallback<Seat>() {
-
-                override fun areItemsTheSame(
-                    old: Seat,
-                    new: Seat
-                ) = old.id == new.id
-
-                override fun areContentsTheSame(
-                    old: Seat,
-                    new: Seat
-                ) = old == new
-            }
+    object SeatItemDiff : DiffUtil.ItemCallback<SeatItem>() {
+        override fun areItemsTheSame(old: SeatItem, new: SeatItem): Boolean {
+            if (old is SeatItem.SeatCell && new is SeatItem.SeatCell)
+                return old.seat.id == new.seat.id
+            return old == new
+        }
+        override fun areContentsTheSame(old: SeatItem, new: SeatItem) = old == new
     }
+}
+
+sealed class SeatItem {
+    data class SeatCell(val seat: Seat) : SeatItem()
+    object Empty : SeatItem()
 }

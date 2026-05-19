@@ -1,26 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="4dp">
 
-<com.google.android.material.card.MaterialCardView
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/seatCard"
-    android:layout_width="52dp"
-    android:layout_height="52dp"
-    android:layout_margin="6dp"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="1dp"
-    app:strokeWidth="2dp"
-    app:strokeColor="@color/seat_available"
-    app:cardBackgroundColor="@android:color/white">
+    <ImageView
+        android:id="@+id/seatIcon"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:src="@drawable/ic_seat_available"
+        android:scaleType="fitCenter"
+        android:contentDescription="Ghế" />
 
     <TextView
-        android:id="@+id/seatLabel"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="center"
-        android:text="A01"
-        android:textSize="12sp"
-        android:textStyle="bold"
-        android:textColor="@color/text_primary" />
+        android:id="@+id/seatNumberText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="11sp"
+        android:textColor="@color/text_primary"
+        android:layout_marginTop="2dp"
+        android:gravity="center" />
 
-</com.google.android.material.card.MaterialCardView>
+</LinearLayout>

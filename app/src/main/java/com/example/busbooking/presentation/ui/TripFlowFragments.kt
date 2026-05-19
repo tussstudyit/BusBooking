@@ -34,8 +34,9 @@ class TripListFragment : Fragment() {
         val db = BusBookingDatabase.getInstance(requireContext())
         TripListViewModelFactory(
             TripRepository(
-                tripDAO = db.tripDao(),
-                routeDAO = db.routeDao()
+                tripDAO  = db.tripDao(),
+                routeDAO = db.routeDao(),
+                seatDAO  = db.seatDao()  // ✅ thêm seatDAO
             )
         )
     }
@@ -82,22 +83,16 @@ class TripListFragment : Fragment() {
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = adapter
 
-        // Lấy arguments
         origin      = arguments?.getString("origin") ?: ""
         destination = arguments?.getString("destination") ?: ""
         currentDate = arguments?.getLong("tripDate") ?: System.currentTimeMillis()
 
-        // Bind header
         originText.text      = origin
         destinationText.text = destination
         tripDateText.text    = dateFmt.format(Date(currentDate))
 
-        // Nút back
-        backButton.setOnClickListener {
-            findNavController().popBackStack()
-        }
+        backButton.setOnClickListener { findNavController().popBackStack() }
 
-        // Nút prev/next ngày
         prevDayButton.setOnClickListener {
             currentDate -= 86400000L
             tripDateText.text = dateFmt.format(Date(currentDate))
@@ -110,14 +105,13 @@ class TripListFragment : Fragment() {
             viewModel.searchTrips(origin, destination, currentDate)
         }
 
-        // Observe
         viewModel.trips.observe(viewLifecycleOwner) { trips ->
             adapter.submitList(trips)
             val isEmpty = trips.isEmpty()
             emptyText.visibility    = if (isEmpty) View.VISIBLE else View.GONE
             recyclerView.visibility = if (isEmpty) View.GONE else View.VISIBLE
         }
-        // Debug: kiểm tra arguments nhận được
+
         android.util.Log.d("TripList", "origin='$origin' destination='$destination' date=$currentDate")
         viewModel.searchTrips(origin, destination, currentDate)
     }
@@ -134,8 +128,9 @@ class TripDetailsFragment : Fragment() {
         ViewModelFactory {
             TripDetailsViewModel(
                 TripRepository(
-                    tripDAO = db.tripDao(),
-                    routeDAO = db.routeDao()
+                    tripDAO  = db.tripDao(),
+                    routeDAO = db.routeDao(),
+                    seatDAO  = db.seatDao()  // ✅ thêm seatDAO
                 )
             )
         }
@@ -176,25 +171,45 @@ class TripDetailsFragment : Fragment() {
             arrivalText.text   = "Đến nơi: ${timeFmt.format(Date(trip.trip.arrivalTime))}"
             priceText.text     = "Giá: ${String.format("%,.0f", trip.trip.price)} VNĐ"
             busText.text       = "Xe: ${trip.bus.busName} (${trip.bus.licensePlate})"
-            statusText.text    = "Trạng thái: ${trip.trip.status}"
+        }
+
+        // ✅ Observe số ghế riêng để hiển thị trạng thái
+        viewModel.availableSeats.observe(viewLifecycleOwner) { available ->
+            when {
+                available < 0 -> {
+                    // Đang load, chưa hiển thị gì
+                    statusText.text = "Trạng thái: Đang tải..."
+                }
+                available == 0 -> {
+                    statusText.text = "Trạng thái: Hết chỗ"
+                    statusText.setTextColor(
+                        requireContext().getColor(android.R.color.holo_red_dark)
+                    )
+                    selectSeatButton.isEnabled = false
+                    selectSeatButton.alpha = 0.5f
+                }
+                else -> {
+                    statusText.text = "Trạng thái: Còn chỗ ($available ghế trống)"
+                    statusText.setTextColor(
+                        requireContext().getColor(android.R.color.holo_green_dark)
+                    )
+                    selectSeatButton.isEnabled = true
+                    selectSeatButton.alpha = 1.0f
+                }
+            }
         }
 
         selectSeatButton.setOnClickListener {
-
             val currentTrip = viewModel.trip.value
-
             if (currentTrip != null) {
-
                 val bundle = Bundle().apply {
                     putLong("tripId", tripId)
                     putDouble("tripPrice", currentTrip.trip.price)
                 }
-
                 findNavController().navigate(
                     R.id.action_tripDetailsFragment_to_seatSelectionFragment,
                     bundle
                 )
-
             } else {
                 Toast.makeText(requireContext(), "Không tải được dữ liệu chuyến", Toast.LENGTH_SHORT).show()
             }

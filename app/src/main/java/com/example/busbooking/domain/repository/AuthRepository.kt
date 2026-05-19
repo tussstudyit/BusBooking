@@ -19,7 +19,7 @@ import kotlinx.coroutines.withContext
  */
 interface IAuthRepository {
     suspend fun registerUser(name: String, email: String, password: String, phone: String): Result<Long>
-    suspend fun loginUser(email: String, password: String): Result<User>
+    suspend fun loginUser(phone: String, password: String): Result<User>
     suspend fun getUserProfile(userId: Long): Result<User>
     suspend fun updateUserProfile(user: User): Result<Unit>
     suspend fun logout(): Result<Unit>
@@ -86,59 +86,67 @@ class AuthRepository(private val userDAO: UserDAO) : IAuthRepository {
         }
     }
 
-     /**
-      * Login user
-      *
-      * Process:
-      * 1. Query user by phone
-      * 2. Verify password (in real app: compare hashed)
-      * 3. Return user object if credentials match
-      * 4. Return error if not found or password mismatch
-      *
-      * @return Result with User if success, Error if failure
-      */
-     override suspend fun loginUser(email: String, password: String): Result<User> = withContext(Dispatchers.IO) {
-         try {
-             // Query user by phone
-             val user = userDAO.getUserByPhone(email)
+      /**
+       * Login user
+       *
+       * Process:
+       * 1. Query user by phone
+       * 2. Verify password (in real app: compare hashed)
+       * 3. Return user object if credentials match
+       * 4. Return error if not found or password mismatch
+       *
+       * @return Result with User if success, Error if failure
+       */
+      override suspend fun loginUser(phone: String, password: String): Result<User> = withContext(Dispatchers.IO) {
+          try {
+              // Query user by phone
+              val user = userDAO.getUserByPhone(phone)
+              println("🔍 Login attempt: phone=$phone")
 
-            return@withContext if (user != null) {
-                if (user.isBlocked) {
-                    Result.Error(
-                        Exception("Account blocked"),
-                        "Your account has been blocked by admin"
-                    )
-                } else {
-                    val storedPassword = user.password
-                    val isVerified = if (PasswordHasher.isBcryptHash(storedPassword)) {
-                        PasswordHasher.verify(password, storedPassword)
-                    } else {
-                        storedPassword == password
-                    }
+             return@withContext if (user != null) {
+                 println("✅ User found: id=${user.id}, role=${user.role}, isBlocked=${user.isBlocked}")
+                 if (user.isBlocked) {
+                     Result.Error(
+                         Exception("Account blocked"),
+                         "Your account has been blocked by admin"
+                     )
+                 } else {
+                     val storedPassword = user.password
+                     println("🔐 Verifying password...")
+                     val isVerified = if (PasswordHasher.isBcryptHash(storedPassword)) {
+                         PasswordHasher.verify(password, storedPassword)
+                     } else {
+                         storedPassword == password
+                     }
 
-                    if (isVerified) {
-                        if (!PasswordHasher.isBcryptHash(storedPassword)) {
-                            val upgradedHash = PasswordHasher.hash(password)
-                            userDAO.updatePassword(user.id, upgradedHash)
-                        }
-                        Result.Success(user)
-                    } else {
-                        Result.Error(
-                            Exception("Invalid credentials"),
-                            "Phone or password is incorrect"
-                        )
-                    }
-                }
-            } else {
-                Result.Error(
-                    Exception("Invalid credentials"),
-                    "Phone or password is incorrect"
-                )
-            }
-        } catch (e: Exception) {
-            Result.Error(e, "Login error: ${'$'}{e.message}")
-        }
-    }
+                     if (isVerified) {
+                         println("✅ Password verified! Login success")
+                         if (!PasswordHasher.isBcryptHash(storedPassword)) {
+                             val upgradedHash = PasswordHasher.hash(password)
+                             userDAO.updatePassword(user.id, upgradedHash)
+                         }
+                         Result.Success(user)
+                     } else {
+                         println("❌ Password mismatch")
+                         Result.Error(
+                             Exception("Invalid credentials"),
+                             "Phone or password is incorrect"
+                         )
+                     }
+                 }
+             } else {
+                 println("❌ User not found with phone=$phone")
+                 Result.Error(
+                     Exception("Invalid credentials"),
+                     "Phone or password is incorrect"
+                 )
+             }
+         } catch (e: Exception) {
+             println("❌ Login exception: ${e.message}")
+             e.printStackTrace()
+             Result.Error(e, "Login error: ${e.message}")
+         }
+     }
 
     /**
      * Get user profile by ID
