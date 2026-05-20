@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
     app:startDestination="@id/splashFragment">
 
     <!-- ═══════════════════════════════════════════════════════════════════════
-         Authentication Flow  →  AuthFragments.kt
+         Authentication Flow
          ═══════════════════════════════════════════════════════════════════════ -->
 
     <fragment
@@ -65,7 +66,7 @@
     </fragment>
 
     <!-- ═══════════════════════════════════════════════════════════════════════
-         Home Fragment (nav_home)  →  HomeFragment.kt
+         Home
          ═══════════════════════════════════════════════════════════════════════ -->
 
     <fragment
@@ -128,7 +129,7 @@
     </fragment>
 
     <!-- ═══════════════════════════════════════════════════════════════════════
-         Trip / Booking Flow  →  TripFlowFragments.kt
+         Trip / Booking Flow
          ═══════════════════════════════════════════════════════════════════════ -->
 
     <fragment
@@ -147,18 +148,25 @@
         <argument
             android:name="tripId"
             app:argType="long" />
+        <!-- ✅ Action nằm ĐÚNG VỊ TRÍ bên trong tripDetailsFragment -->
         <action
             android:id="@+id/action_tripDetailsFragment_to_seatSelectionFragment"
             app:destination="@id/seatSelectionFragment" />
     </fragment>
 
+    <!-- ✅ Khai báo 1 lần duy nhất, đủ cả 2 argument -->
     <fragment
         android:id="@+id/seatSelectionFragment"
         android:name="com.example.busbooking.presentation.ui.SeatSelectionFragment"
-        android:label="Select Seats">
+        android:label="Chọn ghế"
+        tools:layout="@layout/fragment_seat_selection">
         <argument
             android:name="tripId"
             app:argType="long" />
+        <argument
+            android:name="tripPrice"
+            app:argType="float"
+            android:defaultValue="0" />
         <action
             android:id="@+id/action_seatSelectionFragment_to_bookingConfirmationFragment"
             app:destination="@id/bookingConfirmationFragment" />
@@ -179,7 +187,7 @@
     </fragment>
 
     <!-- ═══════════════════════════════════════════════════════════════════════
-         Admin Flow  →  AdminFlowFragments.kt
+         Admin Flow
          ═══════════════════════════════════════════════════════════════════════ -->
 
     <fragment
@@ -236,7 +244,7 @@
     </fragment>
 
     <!-- ═══════════════════════════════════════════════════════════════════════
-         Route Admin  →  RouteAdminFragments.kt
+         Route Admin
          ═══════════════════════════════════════════════════════════════════════ -->
 
     <fragment
@@ -255,11 +263,11 @@
         <argument
             android:name="routeId"
             app:argType="long"
-            android:defaultValue="-1L" />
+            android:defaultValue="-1" />
     </fragment>
 
     <!-- ═══════════════════════════════════════════════════════════════════════
-         Bus Admin  →  BusAdminFragments.kt
+         Bus Admin
          ═══════════════════════════════════════════════════════════════════════ -->
 
     <fragment
@@ -281,7 +289,7 @@
         <argument
             android:name="busId"
             app:argType="long"
-            android:defaultValue="-1L" />
+            android:defaultValue="-1" />
     </fragment>
 
     <fragment
@@ -294,7 +302,7 @@
     </fragment>
 
     <!-- ═══════════════════════════════════════════════════════════════════════
-         Trip Admin  →  TripAdminFragments.kt
+         Trip Admin
          ═══════════════════════════════════════════════════════════════════════ -->
 
     <fragment
@@ -313,7 +321,7 @@
         <argument
             android:name="tripId"
             app:argType="long"
-            android:defaultValue="-1L" />
+            android:defaultValue="-1" />
     </fragment>
 
 </navigation>

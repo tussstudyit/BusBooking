@@ -10,7 +10,7 @@ import com.example.busbooking.data.entity.*
 
 @Database(
     entities = [User::class, Route::class, Bus::class, Trip::class, Seat::class, Ticket::class],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class BusBookingDatabase : RoomDatabase() {

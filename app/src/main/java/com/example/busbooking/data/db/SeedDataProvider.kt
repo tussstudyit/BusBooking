@@ -336,17 +336,24 @@ object SeedDataProvider {
     fun seedUsers(db: SupportSQLiteDatabase) {
         val adminPw = PasswordHasher.hash("123")
         val userPw  = PasswordHasher.hash("123")
-        
+        val now = System.currentTimeMillis()
+
         try {
-            db.execSQL("INSERT OR REPLACE INTO users (id,name,email,password,phone,role) VALUES (?,?,?,?,?,?)",
-                arrayOf<Any?>(1,"Admin","admin@bus.com",adminPw,"0123456789","ADMIN"))
+            db.execSQL(
+                "INSERT OR REPLACE INTO users (id,name,email,password,phone,role,isBlocked,createdAt) VALUES (?,?,?,?,?,?,?,?)",
+                arrayOf<Any?>(1, "Admin", "admin@bus.com", adminPw, "0123456789", "ADMIN", 0, now)
+            )
             println("✅ Admin user seeded: ID=1, Phone=0123456789, Role=ADMIN")
 
-            db.execSQL("INSERT OR REPLACE INTO users (id,name,email,password,phone,role) VALUES (?,?,?,?,?,?)",
-                arrayOf<Any?>(2,"Nguyễn Văn A","user@gmail.com",userPw,"0987654321","USER"))
+            db.execSQL(
+                "INSERT OR REPLACE INTO users (id,name,email,password,phone,role,isBlocked,createdAt) VALUES (?,?,?,?,?,?,?,?)",
+                arrayOf<Any?>(2, "Nguyễn Văn A", "user@gmail.com", userPw, "0987654321", "USER", 0, now)
+            )
 
-            db.execSQL("INSERT OR REPLACE INTO users (id,name,email,password,phone,role) VALUES (?,?,?,?,?,?)",
-                arrayOf<Any?>(3,"Trần Thị B","userb@gmail.com",userPw,"0912345678","USER"))
+            db.execSQL(
+                "INSERT OR REPLACE INTO users (id,name,email,password,phone,role,isBlocked,createdAt) VALUES (?,?,?,?,?,?,?,?)",
+                arrayOf<Any?>(3, "Trần Thị B", "userb@gmail.com", userPw, "0912345678", "USER", 0, now)
+            )
         } catch (e: Exception) {
             println("❌ Error seeding users: ${e.message}")
             e.printStackTrace()

@@ -23,7 +23,6 @@ class MainActivity : AppCompatActivity() {
 
 
         SessionManager.initialize(this)
-        SessionManager.restoreSession()
 
         // Lấy NavController từ NavHostFragment
         val navHostFragment = supportFragmentManager
@@ -33,8 +32,8 @@ class MainActivity : AppCompatActivity() {
         // Gắn BottomNav với NavController
         bottomNav = findViewById(R.id.bottomNavigation)
         bottomNav.setupWithNavController(navController)
+        bottomNav.visibility = View.GONE
 
-        // Ẩn bottom nav ở các màn hình auth (login, register, splash)
         val hideBottomNavDestinations = setOf(
             R.id.splashFragment,
             R.id.loginFragment,

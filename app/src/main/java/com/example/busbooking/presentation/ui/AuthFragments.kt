@@ -11,8 +11,6 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.busbooking.R
@@ -24,11 +22,8 @@ import com.example.busbooking.utils.SessionManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-
-
 // ─────────────────────────────────────────────────────────────────────────────
-// 1. SplashFragment — Kiểm tra session rồi điều hướng
-//    Dùng lifecycleScope thay Handler để tránh memory leak khi fragment bị destroy
+// 1. SplashFragment — Luôn điều hướng về Login
 // ─────────────────────────────────────────────────────────────────────────────
 
 class SplashFragment : Fragment() {
@@ -44,23 +39,11 @@ class SplashFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 delay(2000)
-                navigateBasedOnSession()
+                // ✅ Luôn về Login, không check session
+                findNavController().navigate(R.id.action_splashFragment_to_loginFragment)
             } catch (e: Exception) {
                 Log.e("SplashFragment", "Error: ${e.message}", e)
             }
-        }
-    }
-
-    private fun navigateBasedOnSession() {
-        val nav = findNavController()
-        if (SessionManager.isSessionActive()) {
-            val dest = if (SessionManager.getCurrentUserRole() == "ADMIN")
-                R.id.action_splashFragment_to_adminDashboardFragment
-            else
-                R.id.action_splashFragment_to_nav_home
-            nav.navigate(dest)
-        } else {
-            nav.navigate(R.id.action_splashFragment_to_loginFragment)
         }
     }
 }
@@ -92,12 +75,12 @@ class LoginFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        phoneInput    = view.findViewById(R.id.phoneInput)
-        passwordInput = view.findViewById(R.id.passwordInput)
-        loginButton   = view.findViewById(R.id.loginButton)
+        phoneInput     = view.findViewById(R.id.phoneInput)
+        passwordInput  = view.findViewById(R.id.passwordInput)
+        loginButton    = view.findViewById(R.id.loginButton)
         registerButton = view.findViewById(R.id.registerButton)
-        progressBar   = view.findViewById(R.id.progressBar)
-        errorText     = view.findViewById(R.id.errorText)
+        progressBar    = view.findViewById(R.id.progressBar)
+        errorText      = view.findViewById(R.id.errorText)
 
         loginButton.setOnClickListener {
             val phone    = phoneInput.text.toString().trim()
@@ -151,16 +134,6 @@ class LoginFragment : Fragment() {
     private fun showError(message: String) {
         errorText.text       = message
         errorText.visibility = View.VISIBLE
-    }
-    companion object {
-        fun factory(authRepository: AuthRepository): ViewModelProvider.Factory {
-            return object : ViewModelProvider.Factory {
-                override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    @Suppress("UNCHECKED_CAST")
-                    return AuthViewModel(authRepository) as T
-                }
-            }
-        }
     }
 }
 
@@ -236,9 +209,12 @@ class RegisterFragment : Fragment() {
                 }
                 is AuthState.RegisterSuccess -> {
                     progressBar.visibility   = View.GONE
-                    errorText.visibility     = View.GONE
                     registerButton.isEnabled = true
-                    findNavController().navigate(R.id.action_registerFragment_to_homeFragment) // ✅ về nav_home
+                    if (SessionManager.isSessionActive()) {
+                        findNavController().navigate(R.id.action_registerFragment_to_homeFragment)
+                    } else {
+                        findNavController().navigate(R.id.action_registerFragment_to_loginFragment)
+                    }
                 }
                 is AuthState.Error -> {
                     progressBar.visibility   = View.GONE
