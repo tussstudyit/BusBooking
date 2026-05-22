@@ -14,6 +14,9 @@ interface TicketDAO {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun bookTicket(ticket: Ticket): Long
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertTicket(ticket: Ticket): Long
+
     /**
      * 🔥 Transaction booking (ANTI DOUBLE BOOKING)
      */

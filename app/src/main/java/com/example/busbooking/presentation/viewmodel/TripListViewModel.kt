@@ -5,9 +5,18 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.busbooking.domain.models.Result
-import com.example.busbooking.domain.repository.TripRepository
+import com.example.busbooking.domain.repository.ITripRepository
+import com.example.busbooking.domain.repository.TripSeatAvailability
 import com.example.busbooking.data.relations.TripWithRouteAndBus
 import kotlinx.coroutines.launch
+
+data class TripListItem(
+    val tripDetails: TripWithRouteAndBus,
+    val seatAvailability: TripSeatAvailability
+) {
+    val isBookingOpen: Boolean
+        get() = tripDetails.trip.status == "SCHEDULED" && seatAvailability.availableSeats > 0
+}
 
 /**
  * ViewModel cho TripListFragment.
@@ -15,11 +24,11 @@ import kotlinx.coroutines.launch
  * đến TripState.DetailSuccess vốn chỉ dành cho TripDetailsFragment.
  */
 class TripListViewModel(
-    private val tripRepository: TripRepository
+    private val tripRepository: ITripRepository
 ) : ViewModel() {
 
-    private val _trips = MutableLiveData<List<TripWithRouteAndBus>>(emptyList())
-    val trips: LiveData<List<TripWithRouteAndBus>> = _trips
+    private val _trips = MutableLiveData<List<TripListItem>>(emptyList())
+    val trips: LiveData<List<TripListItem>> = _trips
 
     private val _isLoading = MutableLiveData(false)
     val isLoading: LiveData<Boolean> = _isLoading
@@ -39,7 +48,7 @@ class TripListViewModel(
         viewModelScope.launch {
             when (val result = tripRepository.searchTrips(origin, destination, tripDate)) {
                 is Result.Success -> {
-                    _trips.value = result.data
+                    _trips.value = result.data.withSeatAvailability()
                 }
                 is Result.Error -> {
                     _trips.value = emptyList()
@@ -62,7 +71,7 @@ class TripListViewModel(
         viewModelScope.launch {
             when (val result = tripRepository.getAllTrips()) {
                 is Result.Success -> {
-                    _trips.value = result.data
+                    _trips.value = result.data.withSeatAvailability()
                 }
                 is Result.Error -> {
                     _trips.value = emptyList()
@@ -73,6 +82,16 @@ class TripListViewModel(
                 }
             }
             _isLoading.value = false
+        }
+    }
+
+    private suspend fun List<TripWithRouteAndBus>.withSeatAvailability(): List<TripListItem> {
+        return map { trip ->
+            val availability = when (val seats = tripRepository.getSeatAvailability(trip.trip.id, trip.bus.id)) {
+                is Result.Success -> seats.data
+                else -> TripSeatAvailability(trip.bus.totalSeats, 0)
+            }
+            TripListItem(trip, availability)
         }
     }
 }

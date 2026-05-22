@@ -6,13 +6,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.busbooking.domain.models.Result
-import com.example.busbooking.domain.repository.AuthRepository
+import com.example.busbooking.domain.repository.IAuthRepository
 import com.example.busbooking.presentation.ui.state.AuthState
 import com.example.busbooking.utils.SessionManager
 import kotlinx.coroutines.launch
 
 class AuthViewModel(
-    private val authRepository: AuthRepository
+    private val authRepository: IAuthRepository
 ) : ViewModel() {
 
     private val _authState = MutableLiveData<AuthState>(AuthState.Idle)
@@ -20,7 +20,7 @@ class AuthViewModel(
 
     fun login(phone: String, password: String) {
         if (phone.isBlank() || password.isBlank()) {
-            _authState.value = AuthState.Error("Please fill all fields")
+            _authState.value = AuthState.Error("Vui l\u00f2ng nh\u1eadp \u0111\u1ea7y \u0111\u1ee7 th\u00f4ng tin")
             return
         }
 
@@ -36,7 +36,7 @@ class AuthViewModel(
                     _authState.value = AuthState.Error(result.message)
                 }
                 else -> {
-                    _authState.value = AuthState.Error("Unknown error")
+                    _authState.value = AuthState.Error("C\u00f3 l\u1ed7i x\u1ea3y ra")
                 }
             }
         }
@@ -65,7 +65,7 @@ class AuthViewModel(
                     _authState.value = AuthState.Error(result.message)
                 }
                 else -> {
-                    _authState.value = AuthState.Error("Unknown error")
+                    _authState.value = AuthState.Error("C\u00f3 l\u1ed7i x\u1ea3y ra")
                 }
             }
         }
@@ -77,7 +77,7 @@ class AuthViewModel(
 
     // ✅ Thêm companion object này — LoginFragment và RegisterFragment đều cần nó
     companion object {
-        fun factory(authRepository: AuthRepository): ViewModelProvider.Factory {
+        fun factory(authRepository: IAuthRepository): ViewModelProvider.Factory {
             return object : ViewModelProvider.Factory {
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
                     @Suppress("UNCHECKED_CAST")

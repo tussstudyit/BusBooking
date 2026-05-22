@@ -4,231 +4,192 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import android.util.Log
 import com.example.busbooking.data.entity.Seat
-import com.example.busbooking.domain.models.BookingResult
-import com.example.busbooking.domain.models.Result
-import com.example.busbooking.domain.repository.SeatRepository
-import com.example.busbooking.domain.repository.TicketRepository
+import com.example.busbooking.domain.models.SeatDisplay
+import com.example.busbooking.domain.models.SeatReservationResult
+import com.example.busbooking.domain.models.SeatStatus
+import com.example.busbooking.domain.repository.FirebaseSeatRepository
+import com.example.busbooking.domain.repository.VnpayRepository
 import com.example.busbooking.utils.SessionManager
 import kotlinx.coroutines.launch
 
+data class BookingCheckout(
+    val ticketIds: List<Long>,
+    val seatNumbers: List<String>,
+    val totalPrice: Double,
+    val paymentId: String,
+    val paymentUrl: String?,
+    val qrContent: String?,
+    val qrImageBase64: String?,
+    val qrMimeType: String?,
+    val paymentExpiresAt: Long?,
+    val paymentError: String? = null
+)
+
 class SeatSelectionViewModel(
-    private val seatRepository: SeatRepository,
-    private val ticketRepository: TicketRepository
+    private val seatRepository: FirebaseSeatRepository,
+    private val vnpayRepository: VnpayRepository = VnpayRepository()
 ) : ViewModel() {
+    private companion object {
+        private const val TAG = "VNPAY_FLOW"
+    }
 
-    // =========================
-    // Danh sách ghế
-    // =========================
-
-    private val _seats = MutableLiveData<List<Seat>>(emptyList())
-    val seats: LiveData<List<Seat>> = _seats
-
-    // =========================
-    // Ghế đang chọn
-    // =========================
+    private val _seats = MutableLiveData<List<SeatDisplay>>()
+    val seats: LiveData<List<SeatDisplay>> = _seats
 
     private val _selectedSeats = MutableLiveData<List<Seat>>(emptyList())
     val selectedSeats: LiveData<List<Seat>> = _selectedSeats
 
-    // =========================
-    // Tổng tiền
-    // =========================
-
-    private val _totalPrice = MutableLiveData<Double>(0.0)
+    private val _totalPrice = MutableLiveData(0.0)
     val totalPrice: LiveData<Double> = _totalPrice
-
-    // =========================
-    // Kết quả đặt vé
-    // =========================
 
     private val _bookingResult = MutableLiveData<List<Long>?>(null)
     val bookingResult: LiveData<List<Long>?> = _bookingResult
 
-    // =========================
-    // Error
-    // =========================
+    private val _paymentUrl = MutableLiveData<String?>(null)
+    val paymentUrl: LiveData<String?> = _paymentUrl
+
+    private val _checkout = MutableLiveData<BookingCheckout?>(null)
+    val checkout: LiveData<BookingCheckout?> = _checkout
 
     private val _error = MutableLiveData<String?>(null)
     val error: LiveData<String?> = _error
 
-    // =========================
-    // Giá vé 1 ghế
-    // =========================
-
     private var tripPrice: Double = 0.0
-
-    // =========================
-    // Load ghế
-    // =========================
 
     fun loadSeats(tripId: Long) {
         viewModelScope.launch {
-
-            when (val result = seatRepository.getSeatsByTripId(tripId)) {
-
-                is Result.Success -> {
-                    _seats.value = result.data
-                }
-
-                is Result.Error -> {
-                    _error.value = result.message
-                }
-
-                else -> {
-                    _error.value = "Không thể tải danh sách ghế"
-                }
+            try {
+                _seats.value = seatRepository.getSeatsForTrip(tripId)
+                removeUnavailableSelections()
+            } catch (e: Exception) {
+                _error.value = e.message ?: "Kh\u00f4ng th\u1ec3 t\u1ea3i danh s\u00e1ch gh\u1ebf"
             }
         }
     }
-
-    // =========================
-    // Set giá vé
-    // =========================
 
     fun setTripPrice(price: Double) {
         tripPrice = price
         recalcTotal()
     }
 
-    // =========================
-    // Chọn / bỏ chọn ghế
-    // =========================
-
     fun toggleSeat(seat: Seat) {
+        val status = _seats.value
+            ?.firstOrNull { it.seat.id == seat.id }
+            ?.status
+            ?: SeatStatus.AVAILABLE
 
-        val currentSeats = _selectedSeats.value?.toMutableList()
-            ?: mutableListOf()
-
-        val alreadySelected = currentSeats.any { it.id == seat.id }
-
-        if (alreadySelected) {
-
-            // Bỏ chọn ghế
-            currentSeats.removeAll { it.id == seat.id }
-
-        } else {
-
-            // Thêm ghế
-            currentSeats.add(seat)
+        if (status != SeatStatus.AVAILABLE) {
+            _error.value = "Gh\u1ebf ${seat.seatNumber} kh\u00f4ng c\u00f2n tr\u1ed1ng"
+            return
         }
 
+        val currentSeats = _selectedSeats.value?.toMutableList() ?: mutableListOf()
+        val alreadySelected = currentSeats.any { it.id == seat.id }
+        if (alreadySelected) {
+            currentSeats.removeAll { it.id == seat.id }
+        } else {
+            currentSeats.add(seat)
+        }
         _selectedSeats.value = currentSeats
-
         recalcTotal()
     }
 
-    // =========================
-    // Check ghế đã chọn
-    // =========================
-
-    fun isSeatSelected(seat: Seat): Boolean {
-        return _selectedSeats.value?.any { it.id == seat.id } == true
-    }
-
-    // =========================
-    // Tính tổng tiền
-    // =========================
-
-    private fun recalcTotal() {
-
-        val seatCount = _selectedSeats.value?.size ?: 0
-
-        _totalPrice.value = seatCount * tripPrice
-    }
-
-    // =========================
-    // Đặt vé
-    // =========================
-
     fun bookSeats(tripId: Long) {
-
-        val selectedSeats = _selectedSeats.value
-
-        // Chưa chọn ghế
-        if (selectedSeats.isNullOrEmpty()) {
-            _error.value = "Vui lòng chọn ghế trước khi đặt vé"
+        val selectedSeats = _selectedSeats.value.orEmpty()
+        Log.d(TAG, "bookSeats called tripId=$tripId selected=${selectedSeats.map { it.seatNumber }} price=$tripPrice")
+        if (selectedSeats.isEmpty()) {
+            Log.d(TAG, "bookSeats blocked: no selected seats")
+            _error.value = "Vui l\u00f2ng ch\u1ecdn gh\u1ebf tr\u01b0\u1edbc khi ti\u1ebfp t\u1ee5c"
             return
         }
 
-        // Kiểm tra đăng nhập
-        val userId = SessionManager.getCurrentUser()?.id ?: run {
-            _error.value = "Vui lòng đăng nhập lại"
-            return
-        }
-
+        val userId = SessionManager.getCurrentUser()?.id ?: 0L
+        val selectedSeatNumbers = selectedSeats.map { it.seatNumber }
+        val selectedTotal = selectedSeats.size * tripPrice
         viewModelScope.launch {
-
-            val ticketIds = mutableListOf<Long>()
-
-            for (seat in selectedSeats) {
-
-                when (
-                    val result = ticketRepository.bookTicket(
-                        userId = userId,
-                        tripId = tripId,
-                        seatId = seat.id
-                    )
-                ) {
-
-                    is BookingResult.Success -> {
-
-                        ticketIds.add(result.ticketId)
-                    }
-
-                    is BookingResult.AlreadyBooked -> {
-
-                        _error.value =
-                            "Ghế ${seat.seatNumber} đã được đặt"
-
-                        return@launch
-                    }
-
-                    is BookingResult.InvalidSeat -> {
-
-                        _error.value =
-                            "Ghế ${seat.seatNumber} không hợp lệ"
-
-                        return@launch
-                    }
-
-                    is BookingResult.InvalidTrip -> {
-
-                        _error.value =
-                            "Chuyến xe không hợp lệ"
-
-                        return@launch
-                    }
-
-                    is BookingResult.Failure -> {
-
-                        _error.value =
-                            "Đặt vé thất bại"
-
-                        return@launch
-                    }
+            when (val result = seatRepository.reserveSeats(userId, tripId, selectedSeats, tripPrice)) {
+                is SeatReservationResult.Success -> {
+                    Log.d(TAG, "reserveSeats success paymentId=${result.paymentId} tickets=${result.ticketIds}")
+                    _bookingResult.value = result.ticketIds
+                    _selectedSeats.value = emptyList()
+                    recalcTotal()
+                    loadSeats(tripId)
+                    Log.d(TAG, "createPaymentPayload start paymentId=${result.paymentId}")
+                    vnpayRepository.createPaymentPayload(result.paymentId)
+                        .onSuccess { payment ->
+                            Log.d(TAG, "createPaymentPayload success paymentId=${payment.paymentId} hasUrl=${payment.paymentUrl.isNotBlank()} qrBytes=${payment.qrImageBase64.length}")
+                            _checkout.value = BookingCheckout(
+                                ticketIds = result.ticketIds,
+                                seatNumbers = selectedSeatNumbers,
+                                totalPrice = selectedTotal,
+                                paymentId = payment.paymentId,
+                                paymentUrl = payment.paymentUrl,
+                                qrContent = payment.qrContent,
+                                qrImageBase64 = payment.qrImageBase64,
+                                qrMimeType = payment.qrMimeType,
+                                paymentExpiresAt = payment.expiresAt
+                            )
+                        }
+                        .onFailure { error ->
+                            Log.e(TAG, "createPaymentPayload failed paymentId=${result.paymentId}: ${error.message}", error)
+                            _checkout.value = BookingCheckout(
+                                ticketIds = result.ticketIds,
+                                seatNumbers = selectedSeatNumbers,
+                                totalPrice = selectedTotal,
+                                paymentId = result.paymentId,
+                                paymentUrl = null,
+                                qrContent = null,
+                                qrImageBase64 = null,
+                                qrMimeType = null,
+                                paymentExpiresAt = null,
+                                paymentError = error.message ?: "Kh\u00f4ng th\u1ec3 t\u1ea1o link thanh to\u00e1n VNPAY"
+                            )
+                            _error.value = error.message ?: "Kh\u00f4ng th\u1ec3 t\u1ea1o link thanh to\u00e1n VNPAY"
+                        }
+                }
+                is SeatReservationResult.AlreadyTaken -> {
+                    Log.d(TAG, "reserveSeats already taken seat=${result.seatNumber}")
+                    _error.value = "Gh\u1ebf ${result.seatNumber} \u0111\u00e3 b\u00e1n"
+                    loadSeats(tripId)
+                }
+                is SeatReservationResult.Failure -> {
+                    Log.e(TAG, "reserveSeats failed: ${result.message}")
+                    _error.value = result.message
+                    loadSeats(tripId)
                 }
             }
-
-            // Thành công
-            _bookingResult.value = ticketIds
-
-            // Clear ghế đã chọn
-            _selectedSeats.value = emptyList()
-
-            // Reset tổng tiền
-            recalcTotal()
-
-            // Reload danh sách ghế
-            loadSeats(tripId)
         }
     }
-
-    // =========================
-    // Clear lỗi
-    // =========================
 
     fun clearError() {
         _error.value = null
+    }
+
+    fun clearPaymentUrl() {
+        _paymentUrl.value = null
+    }
+
+    fun clearCheckout() {
+        _checkout.value = null
+    }
+
+    private fun recalcTotal() {
+        _totalPrice.value = _selectedSeats.value.orEmpty().size * tripPrice
+    }
+
+    private fun removeUnavailableSelections() {
+        val availableSeatIds = _seats.value
+            .orEmpty()
+            .filter { it.status == SeatStatus.AVAILABLE }
+            .map { it.seat.id }
+            .toSet()
+        val selected = _selectedSeats.value.orEmpty()
+        val validSelected = selected.filter { it.id in availableSeatIds }
+        if (validSelected.size != selected.size) {
+            _selectedSeats.value = validSelected
+            recalcTotal()
+        }
     }
 }

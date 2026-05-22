@@ -7,12 +7,22 @@ import com.example.busbooking.domain.models.Result
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-class RouteRepository(private val routeDAO: RouteDAO) {
+interface IRouteRepository {
+    suspend fun getAllOrigins(): Result<List<String>>
+    suspend fun getAllDestinations(): Result<List<String>>
+    suspend fun searchRoutes(searchQuery: String): Result<List<Route>>
+    suspend fun getRouteByOriginDestination(origin: String, destination: String): Result<Route>
+    suspend fun createRoute(origin: String, destination: String, distance: Int): Result<Long>
+    suspend fun getRouteWithTrips(routeId: Long): Result<RouteWithTrips>
+    suspend fun deactivateRoute(routeId: Long): Result<Unit>
+}
+
+class RouteRepository(private val routeDAO: RouteDAO) : IRouteRepository {
 
     /**
      * Get all origin locations (for dropdown)
      */
-    suspend fun getAllOrigins(): Result<List<String>> = withContext(Dispatchers.IO) {
+    override suspend fun getAllOrigins(): Result<List<String>> = withContext(Dispatchers.IO) {
         try {
             Result.Success(routeDAO.getAllOrigins())
         } catch (e: Exception) {
@@ -23,7 +33,7 @@ class RouteRepository(private val routeDAO: RouteDAO) {
     /**
      * Get all destination locations (for dropdown)
      */
-    suspend fun getAllDestinations(): Result<List<String>> = withContext(Dispatchers.IO) {
+    override suspend fun getAllDestinations(): Result<List<String>> = withContext(Dispatchers.IO) {
         try {
             Result.Success(routeDAO.getAllDestinations())
         } catch (e: Exception) {
@@ -34,7 +44,7 @@ class RouteRepository(private val routeDAO: RouteDAO) {
     /**
      * Search routes by origin/destination with partial match
      */
-    suspend fun searchRoutes(searchQuery: String): Result<List<Route>> =
+    override suspend fun searchRoutes(searchQuery: String): Result<List<Route>> =
         withContext(Dispatchers.IO) {
             try {
                 if (searchQuery.isBlank()) {
@@ -60,7 +70,7 @@ class RouteRepository(private val routeDAO: RouteDAO) {
     /**
      * Get route by exact origin and destination
      */
-    suspend fun getRouteByOriginDestination(
+    override suspend fun getRouteByOriginDestination(
         origin: String,
         destination: String
     ): Result<Route> = withContext(Dispatchers.IO) {
@@ -88,7 +98,7 @@ class RouteRepository(private val routeDAO: RouteDAO) {
     /**
      * Create new route
      */
-    suspend fun createRoute(
+    override suspend fun createRoute(
         origin: String,
         destination: String,
         distance: Int
@@ -122,7 +132,7 @@ class RouteRepository(private val routeDAO: RouteDAO) {
     /**
      * Get route with all its trips
      */
-    suspend fun getRouteWithTrips(routeId: Long): Result<RouteWithTrips> =
+    override suspend fun getRouteWithTrips(routeId: Long): Result<RouteWithTrips> =
         withContext(Dispatchers.IO) {
             try {
                 val routeWithTrips = routeDAO.getRouteWithTrips(routeId)
@@ -141,7 +151,7 @@ class RouteRepository(private val routeDAO: RouteDAO) {
     /**
      * Deactivate route
      */
-    suspend fun deactivateRoute(routeId: Long): Result<Unit> =
+    override suspend fun deactivateRoute(routeId: Long): Result<Unit> =
         withContext(Dispatchers.IO) {
             try {
                 routeDAO.deactivateRoute(routeId)

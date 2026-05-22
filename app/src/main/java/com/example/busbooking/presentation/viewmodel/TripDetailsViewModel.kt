@@ -6,14 +6,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.busbooking.data.relations.TripWithRouteAndBus
 import com.example.busbooking.domain.models.Result
-import com.example.busbooking.domain.repository.TripRepository
+import com.example.busbooking.domain.repository.ITripRepository
+import com.example.busbooking.domain.repository.TripSeatAvailability
 import kotlinx.coroutines.launch
 
 /**
  * ViewModel cho TripDetailsFragment.
  */
 class TripDetailsViewModel(
-    private val tripRepository: TripRepository
+    private val tripRepository: ITripRepository
 ) : ViewModel() {
 
     private val _trip = MutableLiveData<TripWithRouteAndBus?>(null)
@@ -22,6 +23,9 @@ class TripDetailsViewModel(
     // ✅ Số ghế còn trống (-1 = chưa load)
     private val _availableSeats = MutableLiveData<Int>(-1)
     val availableSeats: LiveData<Int> = _availableSeats
+
+    private val _seatAvailability = MutableLiveData<TripSeatAvailability?>(null)
+    val seatAvailability: LiveData<TripSeatAvailability?> = _seatAvailability
 
     private val _isLoading = MutableLiveData(false)
     val isLoading: LiveData<Boolean> = _isLoading
@@ -40,9 +44,16 @@ class TripDetailsViewModel(
 
                     // ✅ Sau khi có trip, load luôn số ghế trống
                     val busId = result.data.bus.id
-                    when (val seatsResult = tripRepository.getAvailableSeatsCount(tripId, busId)) {
-                        is Result.Success -> _availableSeats.value = seatsResult.data
-                        else -> _availableSeats.value = 0
+                    when (val seatsResult = tripRepository.getSeatAvailability(tripId, busId)) {
+                        is Result.Success -> {
+                            _seatAvailability.value = seatsResult.data
+                            _availableSeats.value = seatsResult.data.availableSeats
+                        }
+                        else -> {
+                            val fallback = TripSeatAvailability(result.data.bus.totalSeats, 0)
+                            _seatAvailability.value = fallback
+                            _availableSeats.value = fallback.availableSeats
+                        }
                     }
                 }
                 is Result.Error -> {

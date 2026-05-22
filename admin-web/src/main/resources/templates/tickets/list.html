@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(${pageTitle})}"></head>
+<body>
+<div th:replace="~{fragments/layout :: shell(~{::section})}">
+  <section>
+    <p class="error" th:if="${loadError}" th:text="${loadError}">Could not load tickets</p>
+    <div class="table-card">
+      <table>
+        <thead><tr><th>ID</th><th>User</th><th>Trip</th><th>Seat</th><th>Status</th><th>Refund</th><th>Booking time</th></tr></thead>
+        <tbody>
+        <tr th:each="ticket : ${tickets}">
+          <td th:text="${ticket.id ?: ticket.documentId}">id</td>
+          <td th:text="${ticket.userId}">user</td>
+          <td th:text="${ticket.tripId}">trip</td>
+          <td th:text="${ticket.seatId}">seat</td>
+          <td th:text="${ticket.status}">status</td>
+          <td th:text="${ticket.refundStatus}">NONE</td>
+          <td th:text="${ticket.bookingTime}">0</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+</body>
+</html>

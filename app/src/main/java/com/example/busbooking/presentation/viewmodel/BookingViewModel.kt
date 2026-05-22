@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.busbooking.data.entity.Seat
 import com.example.busbooking.domain.models.BookingResult
 import com.example.busbooking.domain.models.Result
+import com.example.busbooking.domain.repository.FirebaseTicketRepository
 import com.example.busbooking.domain.repository.SeatRepository
 import com.example.busbooking.domain.repository.TicketRepository
 import com.example.busbooking.presentation.ui.state.BookingState
@@ -15,7 +16,8 @@ import kotlinx.coroutines.launch
 
 class BookingViewModel(
     private val seatRepository: SeatRepository,
-    private val ticketRepository: TicketRepository
+    private val ticketRepository: TicketRepository,
+    private val firebaseTicketRepository: FirebaseTicketRepository = FirebaseTicketRepository()
 ) : ViewModel() {
 
     private val _bookingState = MutableLiveData<BookingState>(BookingState.Idle)
@@ -121,18 +123,32 @@ class BookingViewModel(
             _bookingState.value = BookingState.Loading
 
             viewModelScope.launch {
-                when (val result = ticketRepository.getTicketById(ticketId)) {
+                when (val result = firebaseTicketRepository.getTicketById(ticketId)) {
                     is Result.Success -> {
                         _bookingState.value = BookingState.TicketLoaded(result.data)
                     }
 
                     is Result.Error -> {
-                        _bookingState.value = BookingState.Error(result.message)
+                        loadLocalTicket(ticketId, result.message)
                     }
 
                     else -> {
                         _bookingState.value = BookingState.Error("Không tìm thấy thông tin vé")
                     }
+                }
+            }
+        }
+
+        private suspend fun loadLocalTicket(ticketId: Long, fallbackError: String) {
+            when (val result = ticketRepository.getTicketById(ticketId)) {
+                is Result.Success -> {
+                    _bookingState.value = BookingState.TicketLoaded(result.data)
+                }
+                is Result.Error -> {
+                    _bookingState.value = BookingState.Error(fallbackError)
+                }
+                else -> {
+                    _bookingState.value = BookingState.Error(fallbackError)
                 }
             }
         }

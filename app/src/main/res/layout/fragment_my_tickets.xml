@@ -3,17 +3,17 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="@color/background_grey">
+    android:background="@color/background_grey"
+    android:orientation="vertical">
 
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/background_white"
-        app:tabTextColor="@color/text_secondary"
+        app:tabIndicatorColor="@color/blue_primary"
         app:tabSelectedTextColor="@color/blue_primary"
-        app:tabIndicatorColor="@color/blue_primary">
+        app:tabTextColor="@color/text_secondary">
 
         <com.google.android.material.tabs.TabItem
             android:layout_width="wrap_content"
@@ -24,7 +24,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Lịch sử" />
-
     </com.google.android.material.tabs.TabLayout>
 
     <ProgressBar
@@ -40,8 +39,8 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:padding="12dp"
         android:clipToPadding="false"
+        android:padding="12dp"
         android:scrollbars="vertical" />
 
     <TextView
@@ -50,18 +49,17 @@
         android:layout_height="match_parent"
         android:gravity="center"
         android:text="Không có vé nào"
-        android:textSize="16sp"
         android:textColor="@color/text_secondary"
+        android:textSize="16sp"
         android:visibility="gone" />
 
     <TextView
         android:id="@+id/errorText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:gravity="center"
         android:padding="16dp"
         android:textColor="@color/error"
         android:textSize="14sp"
-        android:gravity="center"
         android:visibility="gone" />
-
 </LinearLayout>

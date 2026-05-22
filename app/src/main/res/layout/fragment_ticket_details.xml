@@ -11,23 +11,21 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Tiêu đề -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
             android:text="Chi tiết vé"
-            android:textSize="20sp"
-            android:textStyle="bold"
             android:textColor="@color/text_primary"
-            android:layout_marginBottom="20dp" />
+            android:textSize="20sp"
+            android:textStyle="bold" />
 
-        <!-- Card chi tiết -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
             app:cardCornerRadius="12dp"
-            app:cardElevation="4dp"
-            android:layout_marginBottom="20dp">
+            app:cardElevation="4dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -35,57 +33,49 @@
                 android:orientation="vertical"
                 android:padding="16dp">
 
-                <!-- Tuyến đường -->
                 <TextView
                     android:id="@+id/routeText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
+                    android:layout_marginBottom="12dp"
                     android:textColor="@color/text_primary"
-                    android:layout_marginBottom="12dp" />
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
 
-                <!-- Ngày -->
                 <TextView
                     android:id="@+id/dateText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textSize="14sp"
+                    android:layout_marginBottom="8dp"
                     android:textColor="@color/text_secondary"
-                    android:layout_marginBottom="8dp" />
+                    android:textSize="14sp" />
 
-                <!-- Ghế -->
                 <TextView
                     android:id="@+id/seatText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textSize="14sp"
+                    android:layout_marginBottom="8dp"
                     android:textColor="@color/text_secondary"
-                    android:layout_marginBottom="8dp" />
+                    android:textSize="14sp" />
 
-                <!-- Trạng thái -->
                 <TextView
                     android:id="@+id/statusText"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textSize="14sp"
+                    android:layout_marginBottom="8dp"
                     android:textColor="@color/text_secondary"
-                    android:layout_marginBottom="8dp" />
+                    android:textSize="14sp" />
 
-                <!-- Giá -->
                 <TextView
                     android:id="@+id/priceText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:textColor="@color/blue_primary"
                     android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/blue_primary" />
-
+                    android:textStyle="bold" />
             </LinearLayout>
-
         </androidx.cardview.widget.CardView>
 
-        <!-- ProgressBar -->
         <ProgressBar
             android:id="@+id/progressBar"
             android:layout_width="wrap_content"
@@ -93,29 +83,24 @@
             android:layout_gravity="center_horizontal"
             android:visibility="gone" />
 
-        <!-- Error Text -->
         <TextView
             android:id="@+id/errorText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:gravity="center"
             android:padding="16dp"
             android:textColor="@color/error"
             android:textSize="14sp"
-            android:gravity="center"
             android:visibility="gone" />
 
-        <!-- Nút hủy -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/cancelButton"
             android:layout_width="match_parent"
             android:layout_height="48dp"
+            android:layout_marginTop="20dp"
             android:text="Hủy vé"
             android:textSize="16sp"
-            android:layout_marginTop="20dp"
             app:backgroundTint="@color/error"
             app:cornerRadius="12dp" />
-
     </LinearLayout>
-
 </androidx.core.widget.NestedScrollView>
-

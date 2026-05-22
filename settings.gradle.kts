@@ -24,3 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "BusBooking"
 include(":app")
+include(":admin-web")

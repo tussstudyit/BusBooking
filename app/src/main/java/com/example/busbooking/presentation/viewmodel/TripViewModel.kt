@@ -5,12 +5,12 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.busbooking.domain.models.Result
-import com.example.busbooking.domain.repository.TripRepository
+import com.example.busbooking.domain.repository.ITripRepository
 import com.example.busbooking.presentation.ui.state.TripState
 import kotlinx.coroutines.launch
 
 class TripViewModel(
-    private val tripRepository: TripRepository
+    private val tripRepository: ITripRepository
 ) : ViewModel() {
 
     private val _tripState = MutableLiveData<TripState>(TripState.Idle)

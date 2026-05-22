@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(${pageTitle})}"></head>
+<body>
+<div th:replace="~{fragments/layout :: shell(~{::section})}">
+  <section>
+    <p class="error" th:if="${loadError}" th:text="${loadError}">Could not load payments</p>
+    <div class="table-card">
+      <table>
+        <thead><tr><th>ID</th><th>User</th><th>Ticket</th><th>Amount</th><th>Provider</th><th>Status</th><th>Txn ref</th></tr></thead>
+        <tbody>
+        <tr th:each="payment : ${payments}">
+          <td th:text="${payment.documentId}">id</td>
+          <td th:text="${payment.userId}">user</td>
+          <td th:text="${payment.ticketId}">ticket</td>
+          <td th:text="${payment.amount}">0</td>
+          <td th:text="${payment.provider}">VNPAY</td>
+          <td th:text="${payment.status}">status</td>
+          <td th:text="${payment.vnpTxnRef}">txn</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+</body>
+</html>

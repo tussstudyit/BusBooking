@@ -5,11 +5,11 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.busbooking.domain.models.Result
-import com.example.busbooking.domain.repository.RouteRepository
+import com.example.busbooking.domain.repository.IRouteRepository
 import kotlinx.coroutines.launch
 
 class RouteSearchViewModel(
-    private val routeRepository: RouteRepository
+    private val routeRepository: IRouteRepository
 ) : ViewModel() {
 
     private val _origins = MutableLiveData<List<String>>(emptyList())

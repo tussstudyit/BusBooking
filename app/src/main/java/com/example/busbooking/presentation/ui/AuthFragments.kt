@@ -14,32 +14,25 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.busbooking.R
-import com.example.busbooking.data.db.BusBookingDatabase
-import com.example.busbooking.domain.repository.AuthRepository
+import com.example.busbooking.domain.repository.FirebaseAuthRepository
 import com.example.busbooking.presentation.ui.state.AuthState
 import com.example.busbooking.presentation.viewmodel.AuthViewModel
 import com.example.busbooking.utils.SessionManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 1. SplashFragment — Luôn điều hướng về Login
-// ─────────────────────────────────────────────────────────────────────────────
-
 class SplashFragment : Fragment() {
-
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? = inflater.inflate(R.layout.fragment_splash, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                delay(2000)
-                // ✅ Luôn về Login, không check session
+                delay(1200)
                 findNavController().navigate(R.id.action_splashFragment_to_loginFragment)
             } catch (e: Exception) {
                 Log.e("SplashFragment", "Error: ${e.message}", e)
@@ -48,16 +41,9 @@ class SplashFragment : Fragment() {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 2. LoginFragment — Đăng nhập, điều hướng theo role
-// ─────────────────────────────────────────────────────────────────────────────
-
 class LoginFragment : Fragment() {
-
     private val viewModel: AuthViewModel by viewModels {
-        val db = BusBookingDatabase.getInstance(requireContext())
-        val repo = AuthRepository(db.userDao())
-        AuthViewModel.factory(repo)
+        AuthViewModel.factory(FirebaseAuthRepository())
     }
 
     private lateinit var phoneInput: EditText
@@ -68,25 +54,26 @@ class LoginFragment : Fragment() {
     private lateinit var errorText: TextView
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? = inflater.inflate(R.layout.fragment_login, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        phoneInput     = view.findViewById(R.id.phoneInput)
-        passwordInput  = view.findViewById(R.id.passwordInput)
-        loginButton    = view.findViewById(R.id.loginButton)
+        phoneInput = view.findViewById(R.id.phoneInput)
+        passwordInput = view.findViewById(R.id.passwordInput)
+        loginButton = view.findViewById(R.id.loginButton)
         registerButton = view.findViewById(R.id.registerButton)
-        progressBar    = view.findViewById(R.id.progressBar)
-        errorText      = view.findViewById(R.id.errorText)
+        progressBar = view.findViewById(R.id.progressBar)
+        errorText = view.findViewById(R.id.errorText)
 
         loginButton.setOnClickListener {
-            val phone    = phoneInput.text.toString().trim()
+            val phone = phoneInput.text.toString().trim()
             val password = passwordInput.text.toString().trim()
             if (phone.isBlank() || password.isBlank()) {
-                showError("Vui lòng nhập số điện thoại và mật khẩu")
+                showError("Vui l\u00f2ng nh\u1eadp s\u1ed1 \u0111i\u1ec7n tho\u1ea1i v\u00e0 m\u1eadt kh\u1ea9u")
                 return@setOnClickListener
             }
             viewModel.login(phone, password)
@@ -98,55 +85,36 @@ class LoginFragment : Fragment() {
 
         viewModel.authState.observe(viewLifecycleOwner) { state ->
             when (state) {
-                is AuthState.Loading -> {
-                    progressBar.visibility = View.VISIBLE
-                    errorText.visibility   = View.GONE
-                    loginButton.isEnabled  = false
-                }
+                is AuthState.Loading -> setLoading(true)
                 is AuthState.LoginSuccess -> {
-                    progressBar.visibility = View.GONE
-                    errorText.visibility   = View.GONE
-                    loginButton.isEnabled  = true
-                    navigateBasedOnRole()
+                    setLoading(false)
+                    findNavController().navigate(R.id.action_loginFragment_to_homeFragment)
                 }
                 is AuthState.Error -> {
-                    progressBar.visibility = View.GONE
-                    loginButton.isEnabled  = true
+                    setLoading(false)
                     showError(state.message)
                 }
-                else -> {
-                    progressBar.visibility = View.GONE
-                    errorText.visibility   = View.GONE
-                    loginButton.isEnabled  = true
-                }
+                else -> setLoading(false)
             }
         }
     }
 
-    private fun navigateBasedOnRole() {
-        val dest = if (SessionManager.getCurrentUserRole() == "ADMIN")
-            R.id.action_loginFragment_to_adminDashboardFragment
-        else
-            R.id.action_loginFragment_to_homeFragment
-        findNavController().navigate(dest)
+    private fun setLoading(loading: Boolean) {
+        progressBar.visibility = if (loading) View.VISIBLE else View.GONE
+        errorText.visibility = View.GONE
+        loginButton.isEnabled = !loading
+        registerButton.isEnabled = !loading
     }
 
     private fun showError(message: String) {
-        errorText.text       = message
+        errorText.text = message
         errorText.visibility = View.VISIBLE
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 3. RegisterFragment — Đăng ký tài khoản mới
-// ─────────────────────────────────────────────────────────────────────────────
-
 class RegisterFragment : Fragment() {
-
     private val viewModel: AuthViewModel by viewModels {
-        val db = BusBookingDatabase.getInstance(requireContext())
-        val repo = AuthRepository(db.userDao())
-        AuthViewModel.factory(repo)
+        AuthViewModel.factory(FirebaseAuthRepository())
     }
 
     private lateinit var nameInput: EditText
@@ -160,40 +128,40 @@ class RegisterFragment : Fragment() {
     private lateinit var errorText: TextView
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? = inflater.inflate(R.layout.fragment_register, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        nameInput            = view.findViewById(R.id.nameInput)
-        emailInput           = view.findViewById(R.id.emailInput)
-        phoneInput           = view.findViewById(R.id.phoneInput)
-        passwordInput        = view.findViewById(R.id.passwordInput)
+        nameInput = view.findViewById(R.id.nameInput)
+        emailInput = view.findViewById(R.id.emailInput)
+        phoneInput = view.findViewById(R.id.phoneInput)
+        passwordInput = view.findViewById(R.id.passwordInput)
         confirmPasswordInput = view.findViewById(R.id.confirmPasswordInput)
-        registerButton       = view.findViewById(R.id.registerButton)
-        backButton           = view.findViewById(R.id.backButton)
-        progressBar          = view.findViewById(R.id.progressBar)
-        errorText            = view.findViewById(R.id.errorText)
+        registerButton = view.findViewById(R.id.registerButton)
+        backButton = view.findViewById(R.id.backButton)
+        progressBar = view.findViewById(R.id.progressBar)
+        errorText = view.findViewById(R.id.errorText)
 
         registerButton.setOnClickListener {
-            val name            = nameInput.text.toString().trim()
-            val email           = emailInput.text.toString().trim()
-            val phone           = phoneInput.text.toString().trim()
-            val password        = passwordInput.text.toString().trim()
+            val name = nameInput.text.toString().trim()
+            val email = emailInput.text.toString().trim()
+            val phone = phoneInput.text.toString().trim()
+            val password = passwordInput.text.toString().trim()
             val confirmPassword = confirmPasswordInput.text.toString().trim()
 
-            if (name.isBlank() || email.isBlank() || phone.isBlank() || password.isBlank()) {
-                showError("Vui lòng điền đầy đủ thông tin")
-                return@setOnClickListener
+            when {
+                name.isBlank() || phone.isBlank() || password.isBlank() -> {
+                    showError("Vui l\u00f2ng \u0111i\u1ec1n \u0111\u1ea7y \u0111\u1ee7 th\u00f4ng tin")
+                }
+                password != confirmPassword -> {
+                    showError("M\u1eadt kh\u1ea9u x\u00e1c nh\u1eadn kh\u00f4ng kh\u1edbp")
+                }
+                else -> viewModel.register(name, email, password, phone)
             }
-            if (password != confirmPassword) {
-                showError("Mật khẩu xác nhận không khớp")
-                return@setOnClickListener
-            }
-
-            viewModel.register(name, email, password, phone)
         }
 
         backButton.setOnClickListener {
@@ -202,14 +170,9 @@ class RegisterFragment : Fragment() {
 
         viewModel.authState.observe(viewLifecycleOwner) { state ->
             when (state) {
-                is AuthState.Loading -> {
-                    progressBar.visibility   = View.VISIBLE
-                    errorText.visibility     = View.GONE
-                    registerButton.isEnabled = false
-                }
+                is AuthState.Loading -> setLoading(true)
                 is AuthState.RegisterSuccess -> {
-                    progressBar.visibility   = View.GONE
-                    registerButton.isEnabled = true
+                    setLoading(false)
                     if (SessionManager.isSessionActive()) {
                         findNavController().navigate(R.id.action_registerFragment_to_homeFragment)
                     } else {
@@ -217,21 +180,23 @@ class RegisterFragment : Fragment() {
                     }
                 }
                 is AuthState.Error -> {
-                    progressBar.visibility   = View.GONE
-                    registerButton.isEnabled = true
+                    setLoading(false)
                     showError(state.message)
                 }
-                else -> {
-                    progressBar.visibility   = View.GONE
-                    errorText.visibility     = View.GONE
-                    registerButton.isEnabled = true
-                }
+                else -> setLoading(false)
             }
         }
     }
 
+    private fun setLoading(loading: Boolean) {
+        progressBar.visibility = if (loading) View.VISIBLE else View.GONE
+        errorText.visibility = View.GONE
+        registerButton.isEnabled = !loading
+        backButton.isEnabled = !loading
+    }
+
     private fun showError(message: String) {
-        errorText.text       = message
+        errorText.text = message
         errorText.visibility = View.VISIBLE
     }
 }

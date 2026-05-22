@@ -6,15 +6,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.busbooking.data.relations.TicketDetails
 import com.example.busbooking.domain.models.Result
+import com.example.busbooking.domain.repository.FirebaseTicketRepository
 import com.example.busbooking.domain.repository.TicketRepository
 import kotlinx.coroutines.launch
 
-/**
- * ViewModel cho BookingConfirmationFragment.
- * Chỉ load và hiển thị thông tin vé vừa đặt — không có hành động write.
- */
 class BookingConfirmationViewModel(
-    private val ticketRepository: TicketRepository
+    private val ticketRepository: TicketRepository,
+    private val firebaseTicketRepository: FirebaseTicketRepository = FirebaseTicketRepository()
 ) : ViewModel() {
 
     private val _ticket = MutableLiveData<TicketDetails?>(null)
@@ -25,11 +23,19 @@ class BookingConfirmationViewModel(
 
     fun loadTicket(ticketId: Long) {
         viewModelScope.launch {
-            when (val result = ticketRepository.getTicketById(ticketId)) {
+            when (val result = firebaseTicketRepository.getTicketById(ticketId)) {
                 is Result.Success -> _ticket.value = result.data
-                is Result.Error   -> _error.value  = result.message
-                else              -> _error.value  = "Không tìm thấy thông tin vé"
+                is Result.Error -> loadLocalTicket(ticketId, result.message)
+                Result.Loading -> Unit
             }
+        }
+    }
+
+    private suspend fun loadLocalTicket(ticketId: Long, fallbackError: String) {
+        when (val result = ticketRepository.getTicketById(ticketId)) {
+            is Result.Success -> _ticket.value = result.data
+            is Result.Error -> _error.value = fallbackError
+            Result.Loading -> Unit
         }
     }
 }

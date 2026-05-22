@@ -65,7 +65,7 @@ interface SeatDAO {
             SELECT 1 FROM tickets t
             WHERE t.tripId = :tripId 
               AND t.seatId = s.id 
-              AND t.status IN ('CONFIRMED', 'PENDING')
+              AND t.status IN ('CONFIRMED', 'USED')
           )
         ORDER BY s.seatNumber
     """)
@@ -81,7 +81,7 @@ interface SeatDAO {
             SELECT 1 FROM tickets t
             WHERE t.tripId = :tripId 
               AND t.seatId = s.id 
-              AND t.status IN ('CONFIRMED', 'PENDING')
+              AND t.status IN ('CONFIRMED', 'USED')
           )
         ORDER BY s.seatNumber
     """)
@@ -95,7 +95,7 @@ interface SeatDAO {
     @Query("""
         SELECT COUNT(DISTINCT t.seatId) FROM tickets t
         WHERE t.tripId = :tripId 
-          AND t.status IN ('CONFIRMED', 'PENDING')
+          AND t.status IN ('CONFIRMED', 'USED')
     """)
     suspend fun getBookedSeatCountForTrip(tripId: Long): Long
 

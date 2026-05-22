@@ -491,11 +491,11 @@ object SeedDataProvider {
     private fun seedTickets(db: SupportSQLiteDatabase) {
         val now = System.currentTimeMillis()
         // Ghế 1 & 2 trên chuyến đầu tiên của ngày đầu tiên (tripId = 1)
-        db.execSQL("INSERT OR REPLACE INTO tickets (id,userId,tripId,seatId,bookingTime,status) VALUES (?,?,?,?,?,?)",
-            arrayOf<Any?>(1, 2, 1, 1, now, "CONFIRMED"))
-        db.execSQL("INSERT OR REPLACE INTO tickets (id,userId,tripId,seatId,bookingTime,status) VALUES (?,?,?,?,?,?)",
-            arrayOf<Any?>(2, 2, 1, 2, now, "CONFIRMED"))
-        db.execSQL("INSERT OR REPLACE INTO tickets (id,userId,tripId,seatId,bookingTime,status) VALUES (?,?,?,?,?,?)",
-            arrayOf<Any?>(3, 3, 2, 41, now, "CONFIRMED"))
+        db.execSQL("INSERT OR REPLACE INTO tickets (id,userId,tripId,seatId,bookingTime,status,refundStatus) VALUES (?,?,?,?,?,?,?)",
+            arrayOf<Any?>(1, 2, 1, 1, now, "CONFIRMED", "NONE"))
+        db.execSQL("INSERT OR REPLACE INTO tickets (id,userId,tripId,seatId,bookingTime,status,refundStatus) VALUES (?,?,?,?,?,?,?)",
+            arrayOf<Any?>(2, 2, 1, 2, now, "CONFIRMED", "NONE"))
+        db.execSQL("INSERT OR REPLACE INTO tickets (id,userId,tripId,seatId,bookingTime,status,refundStatus) VALUES (?,?,?,?,?,?,?)",
+            arrayOf<Any?>(3, 3, 2, 41, now, "CONFIRMED", "NONE"))
     }
 }

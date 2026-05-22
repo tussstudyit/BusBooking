@@ -11,16 +11,49 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import java.util.Calendar
 
+data class TripSeatAvailability(
+    val totalSeats: Int,
+    val bookedSeats: Int
+) {
+    val availableSeats: Int
+        get() = (totalSeats - bookedSeats).coerceAtLeast(0)
+
+    val occupiedPercent: Int
+        get() = if (totalSeats <= 0) {
+            0
+        } else {
+            (bookedSeats.coerceIn(0, totalSeats) * 100 / totalSeats)
+        }
+}
+
+interface ITripRepository {
+    suspend fun searchTrips(origin: String, destination: String, tripDate: Long): Result<List<TripWithRouteAndBus>>
+    suspend fun getUpcomingTripsForRoute(routeId: Long, fromDate: Long): Result<List<TripWithRouteAndBus>>
+    suspend fun getTripById(tripId: Long): Result<TripWithRouteAndBus>
+    suspend fun getSeatAvailability(tripId: Long, busId: Long): Result<TripSeatAvailability>
+    suspend fun getAvailableSeatsCount(tripId: Long, busId: Long): Result<Int>
+    suspend fun createTrip(
+        routeId: Long,
+        busId: Long,
+        departureTime: Long,
+        arrivalTime: Long,
+        price: Double,
+        tripDate: Long
+    ): Result<Long>
+    suspend fun cancelTrip(tripId: Long): Result<Unit>
+    suspend fun getAllTrips(): Result<List<TripWithRouteAndBus>>
+}
+
 class TripRepository(
     private val tripDAO: TripDAO,
     private val routeDAO: RouteDAO,
     private val seatDAO: SeatDAO  // ✅ thêm SeatDAO
-) {
+) : ITripRepository {
 
     /**
      * Search trips by origin, destination, and date
      */
-    suspend fun searchTrips(
+    override suspend fun searchTrips(
         origin: String,
         destination: String,
         tripDate: Long
@@ -71,7 +104,7 @@ class TripRepository(
     /**
      * Get upcoming trips for a specific route
      */
-    suspend fun getUpcomingTripsForRoute(
+    override suspend fun getUpcomingTripsForRoute(
         routeId: Long,
         fromDate: Long
     ): Result<List<TripWithRouteAndBus>> = withContext(Dispatchers.IO) {
@@ -90,7 +123,7 @@ class TripRepository(
     /**
      * Get trip by ID with full details
      */
-    suspend fun getTripById(tripId: Long): Result<TripWithRouteAndBus> =
+    override suspend fun getTripById(tripId: Long): Result<TripWithRouteAndBus> =
         withContext(Dispatchers.IO) {
             try {
                 val trip = tripDAO.getTripById(tripId)
@@ -108,7 +141,7 @@ class TripRepository(
      * ✅ Đếm số ghế còn trống cho một chuyến
      * Dùng: tổng ghế của xe - ghế đã được đặt (CONFIRMED/PENDING)
      */
-    suspend fun getAvailableSeatsCount(tripId: Long, busId: Long): Result<Int> =
+    override suspend fun getAvailableSeatsCount(tripId: Long, busId: Long): Result<Int> =
         withContext(Dispatchers.IO) {
             try {
                 val total  = seatDAO.getSeatCountForBus(busId)
@@ -119,10 +152,21 @@ class TripRepository(
             }
         }
 
+    override suspend fun getSeatAvailability(tripId: Long, busId: Long): Result<TripSeatAvailability> =
+        withContext(Dispatchers.IO) {
+            try {
+                val total = seatDAO.getSeatCountForBus(busId).toInt()
+                val booked = seatDAO.getBookedSeatCountForTrip(tripId).toInt()
+                Result.Success(TripSeatAvailability(total, booked))
+            } catch (e: Exception) {
+                Result.Error(e, "Loi dem ghe: ${e.message}")
+            }
+        }
+
     /**
      * Create new trip
      */
-    suspend fun createTrip(
+    override suspend fun createTrip(
         routeId: Long,
         busId: Long,
         departureTime: Long,
@@ -154,7 +198,7 @@ class TripRepository(
     /**
      * Cancel trip
      */
-    suspend fun cancelTrip(tripId: Long): Result<Unit> = withContext(Dispatchers.IO) {
+    override suspend fun cancelTrip(tripId: Long): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             tripDAO.cancelTrip(tripId)
             Result.Success(Unit)
@@ -166,7 +210,7 @@ class TripRepository(
     /**
      * Get all trips (for admin)
      */
-    suspend fun getAllTrips(): Result<List<TripWithRouteAndBus>> = withContext(Dispatchers.IO) {
+    override suspend fun getAllTrips(): Result<List<TripWithRouteAndBus>> = withContext(Dispatchers.IO) {
         try {
             val allTrips = tripDAO.getAllTrips().first()
             if (allTrips.isNotEmpty()) {

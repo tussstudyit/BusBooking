@@ -1,5 +1,7 @@
-package com.example.busbooking.presentation.ui
+﻿package com.example.busbooking.presentation.ui
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -15,9 +17,9 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.busbooking.R
-import com.example.busbooking.data.db.BusBookingDatabase
-import com.example.busbooking.domain.repository.SeatRepository
-import com.example.busbooking.domain.repository.TicketRepository
+import com.example.busbooking.domain.models.SeatDisplay
+import com.example.busbooking.domain.repository.FirebaseTripRepository
+import com.example.busbooking.domain.repository.FirebaseSeatRepository
 import com.example.busbooking.domain.repository.TripRepository
 import com.example.busbooking.presentation.adapter.SeatAdapter
 import com.example.busbooking.presentation.adapter.TripAdapter
@@ -31,20 +33,15 @@ import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // 1. TripListFragment
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class TripListFragment : Fragment() {
 
     private val viewModel: TripListViewModel by viewModels {
-        val db = BusBookingDatabase.getInstance(requireContext())
         TripListViewModelFactory(
-            TripRepository(
-                tripDAO  = db.tripDao(),
-                routeDAO = db.routeDao(),
-                seatDAO  = db.seatDao()
-            )
+            FirebaseTripRepository()
         )
     }
 
@@ -126,21 +123,16 @@ class TripListFragment : Fragment() {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // 2. TripDetailsFragment
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class TripDetailsFragment : Fragment() {
 
     private val viewModel: TripDetailsViewModel by viewModels {
-        val db = BusBookingDatabase.getInstance(requireContext())
         ViewModelFactory {
             TripDetailsViewModel(
-                TripRepository(
-                    tripDAO  = db.tripDao(),
-                    routeDAO = db.routeDao(),
-                    seatDAO  = db.seatDao()
-                )
+                FirebaseTripRepository()
             )
         }
     }
@@ -182,13 +174,32 @@ class TripDetailsFragment : Fragment() {
             busText.text       = "Xe: ${trip.bus.busName} (${trip.bus.licensePlate})"
         }
 
-        viewModel.availableSeats.observe(viewLifecycleOwner) { available ->
+        viewModel.seatAvailability.observe(viewLifecycleOwner) { availability ->
+            val tripStatus = viewModel.trip.value?.trip?.status ?: "SCHEDULED"
+            val available = availability?.availableSeats ?: -1
+            val total = availability?.totalSeats ?: 0
             when {
                 available < 0 -> {
                     statusText.text = "Trạng thái: Đang tải..."
                 }
-                available == 0 -> {
-                    statusText.text = "Trạng thái: Hết chỗ"
+                tripStatus != "SCHEDULED" -> {
+                    statusText.text = "Trạng thái: ${tripStatus}"
+                    statusText.setTextColor(
+                        requireContext().getColor(android.R.color.holo_red_dark)
+                    )
+                    selectSeatButton.isEnabled = false
+                    selectSeatButton.alpha = 0.5f
+                }
+                total <= 0 -> {
+                    statusText.text = "Trạng thái: Chưa có sơ đồ ghế"
+                    statusText.setTextColor(
+                        requireContext().getColor(android.R.color.holo_red_dark)
+                    )
+                    selectSeatButton.isEnabled = false
+                    selectSeatButton.alpha = 0.5f
+                }
+                available <= 0 -> {
+                    statusText.text = "Trạng thái: Hết chỗ (0/$total giường)"
                     statusText.setTextColor(
                         requireContext().getColor(android.R.color.holo_red_dark)
                     )
@@ -196,7 +207,7 @@ class TripDetailsFragment : Fragment() {
                     selectSeatButton.alpha = 0.5f
                 }
                 else -> {
-                    statusText.text = "Trạng thái: Còn chỗ ($available ghế trống)"
+                    statusText.text = "Trạng thái: Còn chỗ ($available/$total giường)"
                     statusText.setTextColor(
                         requireContext().getColor(android.R.color.holo_green_dark)
                     )
@@ -211,7 +222,11 @@ class TripDetailsFragment : Fragment() {
             if (currentTrip != null) {
                 val bundle = Bundle().apply {
                     putLong("tripId", tripId)
-                    putDouble("tripPrice", currentTrip.trip.price)
+                    putFloat("tripPrice", currentTrip.trip.price.toFloat())
+                    putString("origin", currentTrip.route.origin)
+                    putString("destination", currentTrip.route.destination)
+                    putLong("tripDate", currentTrip.trip.tripDate)
+                    putLong("departureTime", currentTrip.trip.departureTime)
                 }
                 findNavController().navigate(
                     R.id.action_tripDetailsFragment_to_seatSelectionFragment,
@@ -230,43 +245,46 @@ class TripDetailsFragment : Fragment() {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // 3. SeatSelectionFragment
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class SeatSelectionFragment : Fragment() {
 
-    // ── ViewModel ─────────────────────────────────────────────────────────────
+    // â”€â”€ ViewModel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private val viewModel: SeatSelectionViewModel by viewModels {
-        val db = BusBookingDatabase.getInstance(requireContext())
         ViewModelFactory {
             SeatSelectionViewModel(
-                seatRepository   = SeatRepository(db.seatDao()),
-                ticketRepository = TicketRepository(db.ticketDao())
+                seatRepository = FirebaseSeatRepository()
             )
         }
     }
 
-    // ── Views ─────────────────────────────────────────────────────────────────
+    // â”€â”€ Views â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private lateinit var seatsFloor1RecyclerView: RecyclerView
     private lateinit var seatsFloor2RecyclerView: RecyclerView
+    private lateinit var emptySeatText: TextView
     private lateinit var selectedSeatText: TextView
     private lateinit var totalPriceText: TextView
     private lateinit var confirmButton: MaterialButton
 
-    // ── Adapters ──────────────────────────────────────────────────────────────
+    // â”€â”€ Adapters â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private lateinit var adapterFloor1: SeatAdapter
     private lateinit var adapterFloor2: SeatAdapter
 
-    // ── Args ──────────────────────────────────────────────────────────────────
+    // â”€â”€ Args â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private var tripId: Long      = -1L
     private var tripPrice: Double = 0.0
+    private var origin: String = ""
+    private var destination: String = ""
+    private var tripDate: Long = 0L
+    private var departureTime: Long = 0L
 
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
+    // â”€â”€ Lifecycle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -278,7 +296,11 @@ class SeatSelectionFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         tripId    = arguments?.getLong("tripId")      ?: -1L
-        tripPrice = arguments?.getDouble("tripPrice") ?: 0.0
+        tripPrice = arguments?.getFloat("tripPrice")?.toDouble() ?: 0.0
+        origin = arguments?.getString("origin").orEmpty()
+        destination = arguments?.getString("destination").orEmpty()
+        tripDate = arguments?.getLong("tripDate") ?: 0L
+        departureTime = arguments?.getLong("departureTime") ?: 0L
 
         if (tripId == -1L) {
             Toast.makeText(requireContext(), "Chuyến xe không hợp lệ", Toast.LENGTH_SHORT).show()
@@ -287,28 +309,37 @@ class SeatSelectionFragment : Fragment() {
         }
 
         bindViews(view)
+        confirmButton.isEnabled = false
+        confirmButton.alpha = 0.55f
         setupRecyclerViews()
         observeViewModel()
 
         viewModel.setTripPrice(tripPrice)
         viewModel.loadSeats(tripId)
 
+        view.findViewById<ImageButton>(R.id.backButton).setOnClickListener {
+            findNavController().popBackStack()
+        }
+        view.findViewById<ImageButton>(R.id.homeButton).setOnClickListener {
+            findNavController().popBackStack(R.id.nav_home, false)
+        }
         confirmButton.setOnClickListener {
             viewModel.bookSeats(tripId)
         }
     }
 
-    // ── Bind views ────────────────────────────────────────────────────────────
+    // â”€â”€ Bind views â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private fun bindViews(view: View) {
         seatsFloor1RecyclerView = view.findViewById(R.id.seatsFloor1RecyclerView)
         seatsFloor2RecyclerView = view.findViewById(R.id.seatsFloor2RecyclerView)
+        emptySeatText           = view.findViewById(R.id.emptySeatText)
         selectedSeatText        = view.findViewById(R.id.selectedSeatText)
         totalPriceText          = view.findViewById(R.id.totalPriceText)
         confirmButton           = view.findViewById(R.id.confirmButton)
     }
 
-    // ── Setup RecyclerViews ───────────────────────────────────────────────────
+    // â”€â”€ Setup RecyclerViews â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private fun setupRecyclerViews() {
         adapterFloor1 = SeatAdapter { seat -> viewModel.toggleSeat(seat) }
@@ -330,29 +361,38 @@ class SeatSelectionFragment : Fragment() {
         }
     }
 
-    // ── Observe ViewModel ─────────────────────────────────────────────────────
+    // â”€â”€ Observe ViewModel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private fun observeViewModel() {
 
-        // Danh sách ghế → tách tầng → submit
+        // Danh sách ghế -> tách tầng -> submit
         viewModel.seats.observe(viewLifecycleOwner) { allSeats ->
-            val floor1 = allSeats
-                .filter { it.floor == 1 }
-                .sortedBy { it.seatNumber }
+            android.util.Log.d("SeatSelection", "Loaded seats=${allSeats.size} tripId=$tripId")
+            val floor1: List<SeatDisplay> = allSeats
+                .filter { it.seat.floor == 1 }
+                .sortedBy { it.seat.id }
 
-            val floor2 = allSeats
-                .filter { it.floor == 2 }
-                .sortedBy { it.seatNumber }
+            val floor2: List<SeatDisplay> = allSeats
+                .filter { it.seat.floor == 2 }
+                .sortedBy { it.seat.id }
 
+            emptySeatText.text = if (allSeats.isEmpty()) {
+                "Không có sơ đồ ghế cho chuyến này"
+            } else {
+                ""
+            }
+            emptySeatText.visibility = if (allSeats.isEmpty()) View.VISIBLE else View.GONE
             adapterFloor1.submitSeats(floor1)
             adapterFloor2.submitSeats(floor2)
         }
 
-        // Ghế đang chọn → update icon + bottom bar
+        // Ghế đang chọn -> update icon + bottom bar
         viewModel.selectedSeats.observe(viewLifecycleOwner) { selected ->
             adapterFloor1.updateSelectedSeats(selected)
             adapterFloor2.updateSelectedSeats(selected)
             selectedSeatText.text = "x${selected.size}"
+            confirmButton.isEnabled = selected.isNotEmpty()
+            confirmButton.alpha = if (selected.isNotEmpty()) 1f else 0.55f
         }
 
         // Tổng tiền
@@ -363,24 +403,32 @@ class SeatSelectionFragment : Fragment() {
             totalPriceText.text = "  $formatted vnđ"
         }
 
-        // Đặt vé thành công
-        viewModel.bookingResult.observe(viewLifecycleOwner) { ticketIds ->
-            if (!ticketIds.isNullOrEmpty()) {
-                Toast.makeText(
-                    requireContext(),
-                    "Đặt vé thành công! Mã vé: ${ticketIds.joinToString(", ")}",
-                    Toast.LENGTH_LONG
-                ).show()
-
-                // TODO: navigate sang màn xác nhận
-                // val bundle = Bundle().apply {
-                //     putLongArray("ticketIds", ticketIds.toLongArray())
-                // }
-                // findNavController().navigate(
-                //     R.id.action_seatSelection_to_confirmation, bundle
-                // )
-
-                findNavController().popBackStack()
+        viewModel.checkout.observe(viewLifecycleOwner) { checkout ->
+            checkout ?: return@observe
+            if (checkout.ticketIds.isNotEmpty()) {
+                val bundle = Bundle().apply {
+                    putLong("ticketId", checkout.ticketIds.first())
+                    putLongArray("ticketIds", checkout.ticketIds.toLongArray())
+                    putLong("tripId", tripId)
+                    putStringArrayList("seatNumbers", ArrayList(checkout.seatNumbers))
+                    putDouble("totalPrice", checkout.totalPrice)
+                    putString("paymentId", checkout.paymentId)
+                    putString("paymentUrl", checkout.paymentUrl)
+                    putString("qrContent", checkout.qrContent)
+                    putString("qrImageBase64", checkout.qrImageBase64)
+                    putString("qrMimeType", checkout.qrMimeType)
+                    putLong("paymentExpiresAt", checkout.paymentExpiresAt ?: 0L)
+                    putString("paymentError", checkout.paymentError)
+                    putString("origin", origin)
+                    putString("destination", destination)
+                    putLong("tripDate", tripDate)
+                    putLong("departureTime", departureTime)
+                }
+                viewModel.clearCheckout()
+                findNavController().navigate(
+                    R.id.action_seatSelectionFragment_to_bookingConfirmationFragment,
+                    bundle
+                )
             }
         }
 

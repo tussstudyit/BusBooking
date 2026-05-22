@@ -1,7 +1,11 @@
-package com.example.busbooking.presentation.ui
+﻿package com.example.busbooking.presentation.ui
 
 import android.app.DatePickerDialog
+import android.content.Intent
+import android.graphics.BitmapFactory
+import android.net.Uri
 import android.os.Bundle
+import android.util.Base64
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -10,6 +14,8 @@ import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
@@ -17,8 +23,6 @@ import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.NavOptions
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.launch
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -26,6 +30,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.busbooking.R
 import com.example.busbooking.data.db.BusBookingDatabase
 import com.example.busbooking.domain.repository.AuthRepository
+import com.example.busbooking.domain.repository.FirebaseAuthRepository
+import com.example.busbooking.domain.repository.FirebaseRouteRepository
+import com.example.busbooking.domain.repository.FirebaseSeatRepository
 import com.example.busbooking.domain.repository.RouteRepository
 import com.example.busbooking.domain.repository.SeatRepository
 import com.example.busbooking.domain.repository.TicketRepository
@@ -45,10 +52,10 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-// BASE: Tái sử dụng UI loading/empty/error + RecyclerView chung cho ticket list
-// internal thay vì private để subclass public có thể kế thừa
-// ─────────────────────────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// BASE: TÃƒÂ¡i sÃ¡Â»Â­ dÃ¡Â»Â¥ng UI loading/empty/error + RecyclerView chung cho ticket list
+// internal thay vÃƒÂ¬ private Ã„â€˜Ã¡Â»Æ’ subclass public cÃƒÂ³ thÃ¡Â»Æ’ kÃ¡ÂºÂ¿ thÃ¡Â»Â«a
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 internal abstract class BaseTicketListFragment : Fragment() {
 
@@ -128,9 +135,9 @@ internal abstract class BaseTicketListFragment : Fragment() {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 1. MyTicketsFragment — chỉ hiển thị vé CONFIRMED hoặc PENDING
-// ─────────────────────────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// 1. MyTicketsFragment Ã¢â‚¬â€ chÃ¡Â»â€° hiÃ¡Â»Æ’n thÃ¡Â»â€¹ vÃƒÂ© CONFIRMED hoÃ¡ÂºÂ·c PENDING
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 internal class MyTicketsFragment : BaseTicketListFragment() {
 
     override val layoutResId    = R.layout.fragment_my_tickets
@@ -138,11 +145,13 @@ internal class MyTicketsFragment : BaseTicketListFragment() {
 
     override fun onTicketsLoaded(state: UserState.TicketsLoaded) {
         val upcoming = state.tickets.filter {
-            it.ticket.status == "CONFIRMED" || it.ticket.status == "PENDING"
+            it.ticket.status == "CONFIRMED"
+                    || it.ticket.status == "PENDING"
+                    || it.ticket.status == "PENDING_PAYMENT"
         }
         if (upcoming.isEmpty()) {
             showEmpty()
-            emptyText.text = "Bạn chưa có vé nào sắp tới"
+            emptyText.text = "B\u1ea1n ch\u01b0a c\u00f3 v\u00e9 n\u00e0o s\u1eafp t\u1edbi"
         } else {
             showList()
             val adapter = TicketAdapter { ticket ->
@@ -156,9 +165,9 @@ internal class MyTicketsFragment : BaseTicketListFragment() {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 2. BookingHistoryFragment — hiển thị TẤT CẢ vé kể cả đã hủy/đã đi
-// ─────────────────────────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// 2. BookingHistoryFragment Ã¢â‚¬â€ hiÃ¡Â»Æ’n thÃ¡Â»â€¹ TÃ¡ÂºÂ¤T CÃ¡ÂºÂ¢ vÃƒÂ© kÃ¡Â»Æ’ cÃ¡ÂºÂ£ Ã„â€˜ÃƒÂ£ hÃ¡Â»Â§y/Ã„â€˜ÃƒÂ£ Ã„â€˜i
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 internal class BookingHistoryFragment : BaseTicketListFragment() {
 
     override val layoutResId    = R.layout.fragment_booking_history
@@ -168,7 +177,7 @@ internal class BookingHistoryFragment : BaseTicketListFragment() {
         val allTickets = state.tickets.sortedByDescending { it.ticket.bookingTime }
         if (allTickets.isEmpty()) {
             showEmpty()
-            emptyText.text = "Bạn chưa có lịch sử đặt vé nào"
+            emptyText.text = "B\u1ea1n ch\u01b0a c\u00f3 l\u1ecbch s\u1eed \u0111\u1eb7t v\u00e9 n\u00e0o"
         } else {
             showList()
             val adapter = TicketAdapter { ticket ->
@@ -182,9 +191,9 @@ internal class BookingHistoryFragment : BaseTicketListFragment() {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 3. TicketDetailsFragment — nhận ticketId qua arguments (không dùng Safe Args)
-// ─────────────────────────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// 3. TicketDetailsFragment Ã¢â‚¬â€ nhÃ¡ÂºÂ­n ticketId qua arguments (khÃƒÂ´ng dÃƒÂ¹ng Safe Args)
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 class TicketDetailsFragment : Fragment() {
 
@@ -197,7 +206,7 @@ class TicketDetailsFragment : Fragment() {
             )
         }
     }
-    // Đọc ticketId từ Bundle thay vì navArgs() để tránh lỗi Safe Args
+    // Ã„ÂÃ¡Â»Âc ticketId tÃ¡Â»Â« Bundle thay vÃƒÂ¬ navArgs() Ã„â€˜Ã¡Â»Æ’ trÃƒÂ¡nh lÃ¡Â»â€”i Safe Args
     private val ticketId: Long by lazy {
         arguments?.getLong("ticketId", -1L) ?: -1L
     }
@@ -220,7 +229,7 @@ class TicketDetailsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         if (ticketId == -1L) {
-            Toast.makeText(requireContext(), "Vé không hợp lệ", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "V\u00e9 kh\u00f4ng h\u1ee3p l\u1ec7", Toast.LENGTH_SHORT).show()
             findNavController().popBackStack()
             return
         }
@@ -264,7 +273,7 @@ class TicketDetailsFragment : Fragment() {
         progressBar.visibility = View.GONE
         errorText.visibility   = View.GONE
 
-        // TicketLoaded chứa TicketDetails — truy cập qua các relation
+        // TicketLoaded chÃ¡Â»Â©a TicketDetails Ã¢â‚¬â€ truy cÃ¡ÂºÂ­p qua cÃƒÂ¡c relation
         val details = state.ticket                          // TicketDetails
         val ticket  = details.ticket                        // Ticket entity
         val trip    = details.tripWithRouteAndBus.trip      // Trip
@@ -273,11 +282,11 @@ class TicketDetailsFragment : Fragment() {
 
         val dateFmt = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
 
-        routeText.text  = "${route.origin} → ${route.destination}"
+        routeText.text  = "${route.origin} \u2192 ${route.destination}"
         dateText.text   = dateFmt.format(Date(trip.tripDate))
-        seatText.text   = "Ghế: ${seat.seatNumber}"
-        statusText.text = "Trạng thái: ${ticket.status}"
-        priceText.text  = "Giá: ${String.format("%,.0f", trip.price)} VNĐ"
+        seatText.text   = "Gh\u1ebf: ${seat.seatNumber}"
+        statusText.text = "Tr\u1ea1ng th\u00e1i: ${displayTicketStatus(ticket.status)}"
+        priceText.text  = "Gi\u00e1: ${String.format("%,.0f", trip.price)} VN\u0110"
 
         val cancellable = ticket.status == "CONFIRMED" || ticket.status == "PENDING"
         cancelButton.isEnabled  = cancellable
@@ -286,17 +295,25 @@ class TicketDetailsFragment : Fragment() {
 
     private fun showCancelDialog() {
         AlertDialog.Builder(requireContext())
-            .setTitle("Hủy vé")
-            .setMessage("Bạn có chắc muốn hủy vé này không?")
-            .setPositiveButton("Hủy vé") { _, _ -> viewModel.cancelTicket(ticketId) }
-            .setNegativeButton("Không", null)
+            .setTitle("H\u1ee7y v\u00e9")
+            .setMessage("B\u1ea1n c\u00f3 ch\u1eafc mu\u1ed1n h\u1ee7y v\u00e9 n\u00e0y kh\u00f4ng?")
+            .setPositiveButton("H\u1ee7y v\u00e9") { _, _ -> viewModel.cancelTicket(ticketId) }
+            .setNegativeButton("Kh\u00f4ng", null)
             .show()
+    }
+
+    private fun displayTicketStatus(status: String): String = when (status) {
+        "CONFIRMED" -> "\u0110\u00e3 x\u00e1c nh\u1eadn"
+        "PENDING", "PENDING_PAYMENT" -> "Ch\u1edd thanh to\u00e1n"
+        "CANCELLED" -> "\u0110\u00e3 h\u1ee7y"
+        "COMPLETED" -> "Ho\u00e0n t\u1ea5t"
+        else -> status
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 // 4. UserDashboardFragment
-// ─────────────────────────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 class UserDashboardFragment : Fragment() {
 
@@ -310,16 +327,15 @@ class UserDashboardFragment : Fragment() {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 // 5. UserProfileFragment
-// ─────────────────────────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 class UserProfileFragment : Fragment() {
 
     private val viewModel: UserProfileViewModel by viewModels {
-        val db = BusBookingDatabase.getInstance(requireContext())
         ViewModelFactory {
-            UserProfileViewModel(AuthRepository(db.userDao()))
+            UserProfileViewModel(FirebaseAuthRepository())
         }
     }
 
@@ -332,7 +348,7 @@ class UserProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Xóa dòng: sessionManager = SessionManager(requireContext())
+        // XÃƒÂ³a dÃƒÂ²ng: sessionManager = SessionManager(requireContext())
 
         val nameInput = view.findViewById<EditText>(R.id.nameInput)
         val emailInput = view.findViewById<EditText>(R.id.emailInput)
@@ -379,16 +395,16 @@ class UserProfileFragment : Fragment() {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 // 6. RouteSearchFragment
-// ─────────────────────────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 class RouteSearchFragment : Fragment() {
 
     private val viewModel: RouteSearchViewModel by viewModels {
         val db = BusBookingDatabase.getInstance(requireContext())
         ViewModelFactory {
-            RouteSearchViewModel(RouteRepository(db.routeDao()))
+            RouteSearchViewModel(FirebaseRouteRepository())
         }
     }
     private lateinit var originInput: AutoCompleteTextView
@@ -396,7 +412,7 @@ class RouteSearchFragment : Fragment() {
     private lateinit var dateButton: Button
     private lateinit var searchButton: Button
 
-    private var selectedDate: Long = System.currentTimeMillis()
+    private var selectedDate: Long = System.currentTimeMillis() + 86_400_000L
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -411,6 +427,8 @@ class RouteSearchFragment : Fragment() {
         dateButton       = view.findViewById(R.id.dateButton)
         searchButton     = view.findViewById(R.id.searchButton)
 
+        originInput.setText(DEFAULT_ORIGIN, false)
+        destinationInput.setText(DEFAULT_DESTINATION, false)
         updateDateLabel()
         dateButton.setOnClickListener { showDatePicker() }
 
@@ -456,20 +474,23 @@ class RouteSearchFragment : Fragment() {
     private fun updateDateLabel() {
         dateButton.text = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date(selectedDate))
     }
+
+    private companion object {
+        private const val DEFAULT_ORIGIN = "H\u00e0 N\u1ed9i"
+        private const val DEFAULT_DESTINATION = "\u0110\u00e0 N\u1eb5ng"
+    }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 // 7. SeatSelectionFragment
-// ─────────────────────────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
-class SeatSelectionFragment : Fragment() {
+class LegacySeatSelectionFragment : Fragment() {
 
     private val viewModel: SeatSelectionViewModel by viewModels {
-        val db = BusBookingDatabase.getInstance(requireContext())
         ViewModelFactory {
             SeatSelectionViewModel(
-                SeatRepository(db.seatDao()),
-                TicketRepository(db.ticketDao(), db.seatDao())
+                FirebaseSeatRepository()
             )
         }
     }
@@ -488,7 +509,7 @@ class SeatSelectionFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         tripId    = arguments?.getLong("tripId", -1L) ?: -1L
-        tripPrice = arguments?.getDouble("tripPrice", 0.0) ?: 0.0
+        tripPrice = arguments?.getFloat("tripPrice", 0.0f)?.toDouble() ?: 0.0
 
         if (tripId == -1L) {
             Toast.makeText(requireContext(), "Chuyến xe không hợp lệ", Toast.LENGTH_SHORT).show()
@@ -504,6 +525,13 @@ class SeatSelectionFragment : Fragment() {
         val totalPriceText   = view.findViewById<TextView>(R.id.totalPriceText)
         val confirmButton    = view.findViewById<Button>(R.id.confirmButton)
 
+        view.findViewById<ImageButton>(R.id.backButton).setOnClickListener {
+            findNavController().popBackStack()
+        }
+        view.findViewById<ImageButton>(R.id.homeButton).setOnClickListener {
+            findNavController().popBackStack(R.id.nav_home, false)
+        }
+
         adapterFloor1 = SeatAdapter { seat -> viewModel.toggleSeat(seat) }
         adapterFloor2 = SeatAdapter { seat -> viewModel.toggleSeat(seat) }
 
@@ -512,44 +540,51 @@ class SeatSelectionFragment : Fragment() {
         rv1.adapter = adapterFloor1
         rv2.adapter = adapterFloor2
 
-        // ── Observe ghế ──────────────────────────────────────────────────────
+        // Ã¢â€â‚¬Ã¢â€â‚¬ Observe ghÃ¡ÂºÂ¿ Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
         viewModel.seats.observe(viewLifecycleOwner) { seats ->
-            val floor1 = seats.filter { it.floor == 1 }
-            val floor2 = seats.filter { it.floor == 2 }
+            val floor1 = seats.filter { it.seat.floor == 1 }
+            val floor2 = seats.filter { it.seat.floor == 2 }
             adapterFloor1.submitSeats(floor1)
             adapterFloor2.submitSeats(floor2)
         }
 
-        // ── Observe ghế đã chọn ───────────────────────────────────────────────
+        // Ã¢â€â‚¬Ã¢â€â‚¬ Observe ghÃ¡ÂºÂ¿ Ã„â€˜ÃƒÂ£ chÃ¡Â»Ân Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
         viewModel.selectedSeats.observe(viewLifecycleOwner) { selected ->
-            adapterFloor1.setSelectedSeats(selected)
-            adapterFloor2.setSelectedSeats(selected)
+            adapterFloor1.updateSelectedSeats(selected)
+            adapterFloor2.updateSelectedSeats(selected)
             selectedSeatText.text = "x${selected.size}"
         }
 
-        // ── Observe tổng tiền ─────────────────────────────────────────────────
+        // Ã¢â€â‚¬Ã¢â€â‚¬ Observe tÃ¡Â»â€¢ng tiÃ¡Â»Ân Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
         viewModel.totalPrice.observe(viewLifecycleOwner) { price ->
             totalPriceText.text = if (price == 0.0) "  0 vnđ"
             else "  ${String.format("%,.0f", price)} vnđ"
         }
 
-        // ── Observe kết quả đặt vé ────────────────────────────────────────────
+        // Ã¢â€â‚¬Ã¢â€â‚¬ Observe kÃ¡ÂºÂ¿t quÃ¡ÂºÂ£ Ã„â€˜Ã¡ÂºÂ·t vÃƒÂ© Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
         viewModel.bookingResult.observe(viewLifecycleOwner) { ticketIds ->
             ticketIds ?: return@observe
-            val bundle = Bundle().apply { putLong("ticketId", ticketIds.first()) }
-            findNavController().navigate(
-                R.id.action_seatSelectionFragment_to_bookingConfirmationFragment, bundle
-            )
+            Toast.makeText(requireContext(), "Đã tạo yêu cầu thanh toán. Đang mở cổng thanh toán...", Toast.LENGTH_LONG).show()
+            // Payment URL observer opens VNPAY when the backend returns a signed URL.
+
+
         }
 
-        // ── Observe lỗi ───────────────────────────────────────────────────────
+        // Ã¢â€â‚¬Ã¢â€â‚¬ Observe lÃ¡Â»â€”i Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+        viewModel.paymentUrl.observe(viewLifecycleOwner) { url ->
+            if (!url.isNullOrBlank()) {
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                viewModel.clearPaymentUrl()
+            }
+        }
+
         viewModel.error.observe(viewLifecycleOwner) { msg ->
             msg ?: return@observe
             Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
             viewModel.clearError()
         }
 
-        // ── Confirm button ────────────────────────────────────────────────────
+        // Ã¢â€â‚¬Ã¢â€â‚¬ Confirm button Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
         confirmButton.setOnClickListener {
             if (viewModel.selectedSeats.value.isNullOrEmpty()) {
                 Toast.makeText(requireContext(), "Vui lòng chọn ghế", Toast.LENGTH_SHORT).show()
@@ -562,30 +597,46 @@ class SeatSelectionFragment : Fragment() {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 // 8. BookingConfirmationFragment
-// ─────────────────────────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 class BookingConfirmationFragment : Fragment() {
 
-    private val viewModel: BookingConfirmationViewModel by viewModels()
+    private val viewModel: BookingConfirmationViewModel by viewModels {
+        val db = BusBookingDatabase.getInstance(requireContext())
+        ViewModelFactory {
+            BookingConfirmationViewModel(
+                TicketRepository(db.ticketDao(), db.seatDao())
+            )
+        }
+    }
+    private var confirmationTicketId: Long = -1L
+    private var reloadPaymentStatusOnResume = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? = inflater.inflate(R.layout.fragment_booking_confirmation, container, false)
 
+    override fun onResume() {
+        super.onResume()
+        if (reloadPaymentStatusOnResume && confirmationTicketId != -1L) {
+            viewModel.loadTicket(confirmationTicketId)
+        }
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         val ticketId = arguments?.getLong("ticketId", -1L) ?: -1L
         if (ticketId == -1L) {
-            Toast.makeText(requireContext(), "Invalid ticket", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Vé không hợp lệ", Toast.LENGTH_SHORT).show()
             findNavController().popBackStack()
             return
         }
+        confirmationTicketId = ticketId
 
-        // ── Bind views theo đúng ID trong fragment_booking_confirmation.xml ──
         val originCityText      = view.findViewById<TextView>(R.id.originCityText)
         val originStationText   = view.findViewById<TextView>(R.id.originStationText)
         val destinationCityText = view.findViewById<TextView>(R.id.destinationCityText)
@@ -601,62 +652,167 @@ class BookingConfirmationFragment : Fragment() {
         val dropoffPointText    = view.findViewById<TextView>(R.id.dropoffPointText)
         val totalPriceText      = view.findViewById<TextView>(R.id.totalPriceText)
         val paymentMethodText   = view.findViewById<TextView>(R.id.paymentMethodText)
+        val qrCard              = view.findViewById<View>(R.id.qrCard)
+        val qrCodeImage         = view.findViewById<ImageView>(R.id.qrCodeImage)
+        val qrStatusText        = view.findViewById<TextView>(R.id.qrStatusText)
+        val payButton           = view.findViewById<Button>(R.id.payButton)
         val viewTicketsButton   = view.findViewById<Button>(R.id.viewTicketsButton)
 
         val timeFmt = SimpleDateFormat("HH:mm", Locale.getDefault())
         val dateFmt = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+        val paymentId = arguments?.getString("paymentId").orEmpty()
+        val paymentUrl = arguments?.getString("paymentUrl").orEmpty()
+        val qrImageBase64 = arguments?.getString("qrImageBase64").orEmpty()
+        val paymentError = arguments?.getString("paymentError").orEmpty()
+        val seatNumbers = arguments?.getStringArrayList("seatNumbers").orEmpty()
+        val totalPrice = arguments?.getDouble("totalPrice", 0.0) ?: 0.0
+        val origin = arguments?.getString("origin").orEmpty()
+        val destination = arguments?.getString("destination").orEmpty()
+        val tripDate = arguments?.getLong("tripDate", 0L) ?: 0L
+        val departureTime = arguments?.getLong("departureTime", 0L) ?: 0L
+        val hasCheckout = seatNumbers.isNotEmpty() || paymentUrl.isNotBlank() || paymentId.isNotBlank()
+        reloadPaymentStatusOnResume = hasCheckout
+
+        if (hasCheckout) {
+            originCityText.text = origin.ifBlank { "\u0110i\u1ec3m \u0111i" }
+            originStationText.text = ""
+            destinationCityText.text = destination.ifBlank { "\u0110i\u1ec3m \u0111\u1ebfn" }
+            destinationStation.text = ""
+            ticketIdText.text = "#$ticketId"
+            statusText.text = "Ch\u1edd x\u00e1c nh\u1eadn"
+            priceText.text = "${String.format("%,.0f", totalPrice)} VN\u0110"
+            pickupTimeText.text = if (departureTime > 0L) timeFmt.format(Date(departureTime)) else "--:--"
+            pickupDateText.text = if (tripDate > 0L) dateFmt.format(Date(tripDate)) else "--/--/----"
+            quantityText.text = "${seatNumbers.size.coerceAtLeast(1)} v\u00e9"
+            seatText.text = seatNumbers.joinToString(", ")
+            pickupPointText.text = origin.ifBlank { "Theo th\u00f4ng tin chuy\u1ebfn xe" }
+            dropoffPointText.text = destination.ifBlank { "Theo th\u00f4ng tin chuy\u1ebfn xe" }
+            totalPriceText.text = "${String.format("%,.0f", totalPrice)} VN\u0110"
+            paymentMethodText.text = "VNPAY"
+            bindVnpayQr(paymentUrl, qrImageBase64, paymentError, qrCard, qrCodeImage, qrStatusText, payButton)
+            payButton.visibility = View.VISIBLE
+        } else {
+            qrCard.visibility = View.GONE
+            payButton.visibility = View.GONE
+        }
 
         viewModel.ticket.observe(viewLifecycleOwner) { details ->
             details ?: return@observe
 
             val ticket = details.ticket
+            if (hasCheckout) {
+                statusText.text = displayConfirmationStatus(ticket.status)
+                updateCheckoutPaymentUi(ticket.status, qrStatusText, payButton)
+                return@observe
+            }
+
             val route  = details.tripWithRouteAndBus.route
             val trip   = details.tripWithRouteAndBus.trip
             val seat   = details.seat
 
-            // Tuyến đường
             originCityText.text      = route.origin
-            originStationText.text   = ""          // nếu có stop name thì điền vào đây
+            originStationText.text   = ""
             destinationCityText.text = route.destination
             destinationStation.text  = ""
 
-            // Chi tiết vé
             ticketIdText.text     = "#${ticket.id}"
-            statusText.text       = when (ticket.status) {
-                "CONFIRMED" -> "Đã xác nhận"
-                "PENDING"   -> "Chờ xác nhận"
-                "CANCELLED" -> "Đã hủy"
-                else        -> ticket.status
-            }
-            priceText.text        = "${String.format("%,.0f", trip.price)} VNĐ"
+            statusText.text       = displayConfirmationStatus(ticket.status)
+            priceText.text        = "${String.format("%,.0f", trip.price)} VN\u0110"
 
-            // Giờ đón
             pickupTimeText.text   = timeFmt.format(Date(trip.departureTime))
             pickupDateText.text   = dateFmt.format(Date(trip.tripDate))
-
-            // Số lượng (luôn là 1 vé / 1 ghế)
-            quantityText.text     = "1 vé"
-
-            // Ghế
+            quantityText.text     = "1 v\u00e9"
             seatText.text         = seat.seatNumber
-
-            // Điểm đón / trả (dùng tên route nếu không có stop cụ thể)
             pickupPointText.text  = route.origin
             dropoffPointText.text = route.destination
+            totalPriceText.text   = "${String.format("%,.0f", trip.price)} VN\u0110"
+            paymentMethodText.text = "VNPAY"
+        }
 
-            // Tổng tiền
-            totalPriceText.text   = "${String.format("%,.0f", trip.price)} VNĐ"
-
-            // Hình thức thanh toán
-            paymentMethodText.text = "Thanh toán khi lên xe"
+        payButton.setOnClickListener {
+            if (paymentUrl.isBlank()) {
+                Toast.makeText(requireContext(), "Chưa có link thanh toán VNPAY", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(paymentUrl)))
         }
 
         viewTicketsButton.setOnClickListener {
-            findNavController().navigate(
-                R.id.action_bookingConfirmationFragment_to_myTicketsFragment
-            )
+            findNavController().navigate(R.id.action_bookingConfirmationFragment_to_myTicketsFragment)
+        }
+
+        viewModel.error.observe(viewLifecycleOwner) { message ->
+            if (!message.isNullOrBlank() && !hasCheckout) {
+                Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+            }
         }
 
         viewModel.loadTicket(ticketId)
     }
+
+    private fun bindVnpayQr(
+        paymentUrl: String,
+        qrImageBase64: String,
+        paymentError: String,
+        qrCard: View,
+        qrCodeImage: ImageView,
+        qrStatusText: TextView,
+        payButton: Button
+    ) {
+        qrCard.visibility = View.VISIBLE
+        val qrBitmap = decodeQrBitmap(qrImageBase64)
+        if (qrBitmap != null) {
+            qrCodeImage.visibility = View.VISIBLE
+            qrCodeImage.setImageBitmap(qrBitmap)
+        } else {
+            qrCodeImage.visibility = View.GONE
+        }
+
+        qrStatusText.text = if (paymentUrl.isNotBlank() && qrBitmap != null) {
+            "Dùng app ngân hàng hoặc VNPAY để quét mã"
+        } else if (paymentUrl.isNotBlank()) {
+            "Không đọc được ảnh QR. Bấm mở trang thanh toán để tiếp tục."
+        } else {
+            "Chưa tạo được mã QR VNPAY: ${paymentError.ifBlank { "kiểm tra cấu hình VNPAY và admin-web" }}"
+        }
+        payButton.text = if (paymentUrl.isBlank()) "Chưa có link thanh toán" else "Mở trang thanh toán"
+        payButton.isEnabled = paymentUrl.isNotBlank()
+        payButton.alpha = if (paymentUrl.isNotBlank()) 1f else 0.55f
+    }
+
+    private fun updateCheckoutPaymentUi(
+        status: String,
+        qrStatusText: TextView,
+        payButton: Button
+    ) {
+        when (status) {
+            "CONFIRMED" -> {
+                qrStatusText.text = "Thanh toán thành công. Vé đã được xác nhận."
+                payButton.visibility = View.GONE
+            }
+            "PAYMENT_FAILED", "CANCELLED" -> {
+                qrStatusText.text = "Thanh toán không thành công. Vui lòng đặt lại vé nếu cần."
+                payButton.isEnabled = false
+                payButton.alpha = 0.55f
+            }
+            else -> {
+                qrStatusText.text = "Đang chờ kết quả thanh toán VNPAY. Quay lại màn hình này để tự động cập nhật."
+            }
+        }
+    }
+
+    private fun displayConfirmationStatus(status: String): String = when (status) {
+        "CONFIRMED" -> "\u0110\u00e3 x\u00e1c nh\u1eadn"
+        "PENDING", "PENDING_PAYMENT" -> "Ch\u1edd thanh to\u00e1n"
+        "PAYMENT_FAILED" -> "Thanh to\u00e1n th\u1ea5t b\u1ea1i"
+        "CANCELLED" -> "\u0110\u00e3 h\u1ee7y"
+        else -> status
+    }
+
+    private fun decodeQrBitmap(qrImageBase64: String) = runCatching {
+        if (qrImageBase64.isBlank()) return@runCatching null
+        val bytes = Base64.decode(qrImageBase64, Base64.DEFAULT)
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+    }.getOrNull()
 }
+

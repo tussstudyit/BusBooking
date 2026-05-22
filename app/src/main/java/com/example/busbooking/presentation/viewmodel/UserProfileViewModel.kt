@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.busbooking.data.entity.User
 import com.example.busbooking.domain.models.Result
-import com.example.busbooking.domain.repository.AuthRepository
+import com.example.busbooking.domain.repository.IAuthRepository
 import com.example.busbooking.utils.SessionManager
 import kotlinx.coroutines.launch
 
@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
  * Tách riêng khỏi UserViewModel để không chia sẻ state với MyTickets/History.
  */
 class UserProfileViewModel(
-    private val authRepository: AuthRepository
+    private val authRepository: IAuthRepository
 ) : ViewModel() {
 
     private val _user = MutableLiveData<User?>(null)

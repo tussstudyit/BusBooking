@@ -1,0 +1,23 @@
+server:
+  port: ${ADMIN_WEB_PORT:8081}
+
+spring:
+  application:
+    name: busbooking-admin-web
+  thymeleaf:
+    cache: false
+
+firebase:
+  project-id: ${FIREBASE_PROJECT_ID:busbooking-f44f162d}
+  service-account-path: ${FIREBASE_SERVICE_ACCOUNT_PATH:config/firebase-service-account.json}
+  web-api-key: ${FIREBASE_WEB_API_KEY:AIzaSyBICxIqovg1ewSRNpugcLL35unD4AmEjWE}
+
+admin:
+  session-timeout-minutes: ${ADMIN_SESSION_TIMEOUT_MINUTES:120}
+  fallback-emails: ${ADMIN_FALLBACK_EMAILS:admin@busbooking.com}
+
+vnpay:
+  pay-url: ${VNPAY_PAY_URL:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
+  tmn-code: ${VNPAY_TMN_CODE:}
+  hash-secret: ${VNPAY_HASH_SECRET:}
+  return-url: ${VNPAY_RETURN_URL:http://10.0.2.2:8081/api/payments/vnpay/return}

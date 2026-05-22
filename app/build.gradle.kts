@@ -1,8 +1,18 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.google.ksp)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.google.services)
+}
+
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) {
+        file.inputStream().use { this.load(it) }
+    }
 }
 
 android {
@@ -17,6 +27,11 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField(
+            "String",
+            "ADMIN_WEB_BASE_URL",
+            "\"${localProperties.getProperty("admin.web.baseUrl", "http://10.0.2.2:8081")}\""
+        )
     }
 
     buildTypes {
@@ -37,6 +52,7 @@ android {
     buildFeatures {
         compose = true
         viewBinding = true
+        buildConfig = true
     }
 }
 
@@ -71,9 +87,15 @@ dependencies {
 
     // Coroutines
     implementation(libs.kotlinx.coroutines)
+    implementation(libs.kotlinx.coroutines.play.services)
 
     // Kotlinx Serialization
     implementation(libs.kotlinx.serialization.json)
+
+    // Firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
 
     // Bcrypt for password hashing
     implementation(libs.bcrypt)
