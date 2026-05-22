@@ -179,13 +179,15 @@ class FirebaseSeatRepository(
                 val seatNumber = document.getString("seatNumber")
                     ?.takeIf { it.isNotBlank() }
                     ?: seatNumber(index)
+                val floorIndex = seatNumber.dropWhile { it.isLetter() }.toIntOrNull()
+                    ?: if (index <= 17) index else index - 17
                 Seat(
                     id = seatId,
                     busId = numberAsLong(document.get("busId")) ?: busId,
                     seatNumber = seatNumber,
                     floor = numberAsInt(document.get("floor")) ?: if (index <= 17) 1 else 2,
-                    rowIndex = numberAsInt(document.get("rowIndex")) ?: ((index - 1) % 17) / 3,
-                    columnIndex = numberAsInt(document.get("columnIndex")) ?: (index - 1) % 3,
+                    rowIndex = numberAsInt(document.get("rowIndex")) ?: (floorIndex - 1) / 3,
+                    columnIndex = numberAsInt(document.get("columnIndex")) ?: (floorIndex - 1) % 3,
                     isWindow = document.getBoolean("isWindow") ?: false,
                     isAisle = document.getBoolean("isAisle") ?: false,
                     seatType = document.getString("seatType") ?: "STANDARD",
@@ -257,13 +259,14 @@ class FirebaseSeatRepository(
 
     private fun defaultSeats(busId: Long): List<Seat> {
         return (1..34).map { index ->
+            val floorIndex = if (index <= 17) index else index - 17
             Seat(
                 id = index.toLong(),
                 busId = busId,
                 seatNumber = seatNumber(index),
                 floor = if (index <= 17) 1 else 2,
-                rowIndex = ((index - 1) % 17) / 3,
-                columnIndex = (index - 1) % 3,
+                rowIndex = (floorIndex - 1) / 3,
+                columnIndex = (floorIndex - 1) % 3,
                 isWindow = index % 3 == 1 || index % 3 == 0,
                 isAisle = index % 3 == 2,
                 seatType = "STANDARD",

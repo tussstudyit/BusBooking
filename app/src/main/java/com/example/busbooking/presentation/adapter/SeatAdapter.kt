@@ -55,7 +55,12 @@ class SeatAdapter(
 
     private fun buildItems(seats: List<SeatDisplay>): List<SeatItem> {
         val result = mutableListOf<SeatItem>()
-        val ordered = seats.sortedWith(compareBy<SeatDisplay> { it.seat.rowIndex }.thenBy { it.seat.columnIndex }.thenBy { it.seat.id })
+        val ordered = seats.sortedWith(
+            compareBy<SeatDisplay> { it.seat.seatNumber.seatNumberIndex() ?: Int.MAX_VALUE }
+                .thenBy { it.seat.rowIndex }
+                .thenBy { it.seat.columnIndex }
+                .thenBy { it.seat.id }
+        )
         if (ordered.isEmpty()) {
             return result
         }
@@ -134,6 +139,10 @@ private fun String.padSeatNumber(): String {
     } else {
         this
     }
+}
+
+private fun String.seatNumberIndex(): Int? {
+    return dropWhile { it.isLetter() }.toIntOrNull()
 }
 
 sealed class SeatItem {
