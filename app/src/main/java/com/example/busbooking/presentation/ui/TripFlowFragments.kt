@@ -269,6 +269,7 @@ class SeatSelectionFragment : Fragment() {
     private lateinit var selectedSeatText: TextView
     private lateinit var totalPriceText: TextView
     private lateinit var confirmButton: MaterialButton
+    private var confirmButtonDefaultText: CharSequence = ""
 
     // â”€â”€ Adapters â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -309,6 +310,7 @@ class SeatSelectionFragment : Fragment() {
         }
 
         bindViews(view)
+        confirmButtonDefaultText = confirmButton.text
         confirmButton.isEnabled = false
         confirmButton.alpha = 0.55f
         setupRecyclerViews()
@@ -391,8 +393,16 @@ class SeatSelectionFragment : Fragment() {
             adapterFloor1.updateSelectedSeats(selected)
             adapterFloor2.updateSelectedSeats(selected)
             selectedSeatText.text = "x${selected.size}"
-            confirmButton.isEnabled = selected.isNotEmpty()
-            confirmButton.alpha = if (selected.isNotEmpty()) 1f else 0.55f
+            val canConfirm = selected.isNotEmpty() && viewModel.isProcessing.value != true
+            confirmButton.isEnabled = canConfirm
+            confirmButton.alpha = if (canConfirm) 1f else 0.55f
+        }
+
+        viewModel.isProcessing.observe(viewLifecycleOwner) { isProcessing ->
+            val hasSelection = viewModel.selectedSeats.value.orEmpty().isNotEmpty()
+            confirmButton.text = if (isProcessing) "ĐANG TẠO QR..." else confirmButtonDefaultText
+            confirmButton.isEnabled = hasSelection && !isProcessing
+            confirmButton.alpha = if (hasSelection && !isProcessing) 1f else 0.55f
         }
 
         // Tổng tiền

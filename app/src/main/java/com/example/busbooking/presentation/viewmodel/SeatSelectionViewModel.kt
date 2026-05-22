@@ -27,6 +27,13 @@ data class BookingCheckout(
     val paymentError: String? = null
 )
 
+private data class PendingCheckout(
+    val ticketIds: List<Long>,
+    val seatNumbers: List<String>,
+    val totalPrice: Double,
+    val paymentId: String
+)
+
 class SeatSelectionViewModel(
     private val seatRepository: FirebaseSeatRepository,
     private val vnpayRepository: VnpayRepository = VnpayRepository()
@@ -56,7 +63,11 @@ class SeatSelectionViewModel(
     private val _error = MutableLiveData<String?>(null)
     val error: LiveData<String?> = _error
 
+    private val _isProcessing = MutableLiveData(false)
+    val isProcessing: LiveData<Boolean> = _isProcessing
+
     private var tripPrice: Double = 0.0
+    private var pendingCheckout: PendingCheckout? = null
 
     fun loadSeats(tripId: Long) {
         viewModelScope.launch {
@@ -99,6 +110,16 @@ class SeatSelectionViewModel(
     fun bookSeats(tripId: Long) {
         val selectedSeats = _selectedSeats.value.orEmpty()
         Log.d(TAG, "bookSeats called tripId=$tripId selected=${selectedSeats.map { it.seatNumber }} price=$tripPrice")
+        if (_isProcessing.value == true) {
+            Log.d(TAG, "bookSeats ignored: payment creation is already running")
+            return
+        }
+
+        pendingCheckout?.let { pending ->
+            createPaymentPayload(pending)
+            return
+        }
+
         if (selectedSeats.isEmpty()) {
             Log.d(TAG, "bookSeats blocked: no selected seats")
             _error.value = "Vui l\u00f2ng ch\u1ecdn gh\u1ebf tr\u01b0\u1edbc khi ti\u1ebfp t\u1ee5c"
@@ -109,54 +130,29 @@ class SeatSelectionViewModel(
         val selectedSeatNumbers = selectedSeats.map { it.seatNumber }
         val selectedTotal = selectedSeats.size * tripPrice
         viewModelScope.launch {
+            _isProcessing.value = true
             when (val result = seatRepository.reserveSeats(userId, tripId, selectedSeats, tripPrice)) {
                 is SeatReservationResult.Success -> {
                     Log.d(TAG, "reserveSeats success paymentId=${result.paymentId} tickets=${result.ticketIds}")
                     _bookingResult.value = result.ticketIds
-                    _selectedSeats.value = emptyList()
-                    recalcTotal()
-                    loadSeats(tripId)
-                    Log.d(TAG, "createPaymentPayload start paymentId=${result.paymentId}")
-                    vnpayRepository.createPaymentPayload(result.paymentId)
-                        .onSuccess { payment ->
-                            Log.d(TAG, "createPaymentPayload success paymentId=${payment.paymentId} hasUrl=${payment.paymentUrl.isNotBlank()} qrBytes=${payment.qrImageBase64.length}")
-                            _checkout.value = BookingCheckout(
-                                ticketIds = result.ticketIds,
-                                seatNumbers = selectedSeatNumbers,
-                                totalPrice = selectedTotal,
-                                paymentId = payment.paymentId,
-                                paymentUrl = payment.paymentUrl,
-                                qrContent = payment.qrContent,
-                                qrImageBase64 = payment.qrImageBase64,
-                                qrMimeType = payment.qrMimeType,
-                                paymentExpiresAt = payment.expiresAt
-                            )
-                        }
-                        .onFailure { error ->
-                            Log.e(TAG, "createPaymentPayload failed paymentId=${result.paymentId}: ${error.message}", error)
-                            _checkout.value = BookingCheckout(
-                                ticketIds = result.ticketIds,
-                                seatNumbers = selectedSeatNumbers,
-                                totalPrice = selectedTotal,
-                                paymentId = result.paymentId,
-                                paymentUrl = null,
-                                qrContent = null,
-                                qrImageBase64 = null,
-                                qrMimeType = null,
-                                paymentExpiresAt = null,
-                                paymentError = error.message ?: "Kh\u00f4ng th\u1ec3 t\u1ea1o link thanh to\u00e1n VNPAY"
-                            )
-                            _error.value = error.message ?: "Kh\u00f4ng th\u1ec3 t\u1ea1o link thanh to\u00e1n VNPAY"
-                        }
+                    pendingCheckout = PendingCheckout(
+                        ticketIds = result.ticketIds,
+                        seatNumbers = selectedSeatNumbers,
+                        totalPrice = selectedTotal,
+                        paymentId = result.paymentId
+                    )
+                    createPaymentPayload(pendingCheckout ?: return@launch)
                 }
                 is SeatReservationResult.AlreadyTaken -> {
                     Log.d(TAG, "reserveSeats already taken seat=${result.seatNumber}")
                     _error.value = "Gh\u1ebf ${result.seatNumber} \u0111\u00e3 b\u00e1n"
+                    _isProcessing.value = false
                     loadSeats(tripId)
                 }
                 is SeatReservationResult.Failure -> {
                     Log.e(TAG, "reserveSeats failed: ${result.message}")
                     _error.value = result.message
+                    _isProcessing.value = false
                     loadSeats(tripId)
                 }
             }
@@ -177,6 +173,36 @@ class SeatSelectionViewModel(
 
     private fun recalcTotal() {
         _totalPrice.value = _selectedSeats.value.orEmpty().size * tripPrice
+    }
+
+    private fun createPaymentPayload(pending: PendingCheckout) {
+        viewModelScope.launch {
+            _isProcessing.value = true
+            Log.d(TAG, "createPaymentPayload start paymentId=${pending.paymentId}")
+            vnpayRepository.createPaymentPayload(pending.paymentId)
+                .onSuccess { payment ->
+                    Log.d(TAG, "createPaymentPayload success paymentId=${payment.paymentId} hasUrl=${payment.paymentUrl.isNotBlank()} qrBytes=${payment.qrImageBase64.length}")
+                    pendingCheckout = null
+                    _selectedSeats.value = emptyList()
+                    recalcTotal()
+                    _checkout.value = BookingCheckout(
+                        ticketIds = pending.ticketIds,
+                        seatNumbers = pending.seatNumbers,
+                        totalPrice = pending.totalPrice,
+                        paymentId = payment.paymentId,
+                        paymentUrl = payment.paymentUrl,
+                        qrContent = payment.qrContent,
+                        qrImageBase64 = payment.qrImageBase64,
+                        qrMimeType = payment.qrMimeType,
+                        paymentExpiresAt = payment.expiresAt
+                    )
+                }
+                .onFailure { error ->
+                    Log.e(TAG, "createPaymentPayload failed paymentId=${pending.paymentId}: ${error.message}", error)
+                    _error.value = error.message ?: "Kh\u00f4ng th\u1ec3 t\u1ea1o link thanh to\u00e1n VNPAY"
+                }
+            _isProcessing.value = false
+        }
     }
 
     private fun removeUnavailableSelections() {

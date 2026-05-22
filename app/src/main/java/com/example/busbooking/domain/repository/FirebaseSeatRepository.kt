@@ -97,12 +97,10 @@ class FirebaseSeatRepository(
 
                 val busId = numberAsLong(tripSnapshot.get("busId")) ?: 0L
                 val now = System.currentTimeMillis()
-                val holdExpiresAt = now + HOLD_DURATION_MS
                 val paymentRef = payments.document()
                 val paymentId = paymentRef.id
                 val ticketIds = mutableListOf<Long>()
                 val ticketDocumentIds = mutableListOf<String>()
-                val tripSeatIds = mutableListOf<String>()
 
                 val tripSeatRefs = selectedSeats.map { seat ->
                     seat to tripSeats.document("${tripId}_${seat.id}")
@@ -112,17 +110,16 @@ class FirebaseSeatRepository(
                 }
 
                 tripSeatSnapshots.forEach { (seat, _, snapshot) ->
-                    if (isSeatTaken(snapshot.getString("status"), numberAsLong(snapshot.get("holdExpiresAt")), now)) {
+                    if (isSeatTaken(snapshot.getString("status"))) {
                         throw SeatTakenException(seat.seatNumber)
                     }
                 }
 
-                tripSeatSnapshots.forEachIndexed { index, (seat, tripSeatRef, _) ->
+                tripSeatSnapshots.forEachIndexed { index, (seat, _, _) ->
                     val ticketRef = tickets.document()
                     val ticketId = ticketRef.id.toStableLongId()
                     ticketIds += ticketId
                     ticketDocumentIds += ticketRef.id
-                    tripSeatIds += tripSeatRef.id
 
                     transaction.set(ticketRef, mapOf(
                         "id" to ticketId,
@@ -139,21 +136,6 @@ class FirebaseSeatRepository(
                         "refundStatus" to "NONE",
                         "createdAt" to now
                     ))
-
-                    transaction.set(tripSeatRef, mapOf(
-                        "tripId" to tripId,
-                        "seatId" to seat.id,
-                        "seatNumber" to seat.seatNumber,
-                        "ticketId" to ticketId,
-                        "ticketDocumentId" to ticketRef.id,
-                        "paymentId" to paymentId,
-                        "userId" to userUid,
-                        "userNumericId" to userId,
-                        "status" to "PENDING_PAYMENT",
-                        "holdExpiresAt" to holdExpiresAt,
-                        "createdAt" to now,
-                        "updatedAt" to now
-                    ))
                 }
 
                 transaction.set(paymentRef, mapOf(
@@ -161,7 +143,7 @@ class FirebaseSeatRepository(
                     "ticketId" to ticketDocumentIds.firstOrNull().orEmpty(),
                     "ticketIds" to ticketIds,
                     "ticketDocumentIds" to ticketDocumentIds,
-                    "tripSeatIds" to tripSeatIds,
+                    "tripSeatIds" to emptyList<String>(),
                     "userId" to userUid,
                     "userNumericId" to userId,
                     "tripId" to tripId,
@@ -170,7 +152,6 @@ class FirebaseSeatRepository(
                     "amount" to amountPerSeat * selectedSeats.size,
                     "provider" to "VNPAY",
                     "status" to "CREATED",
-                    "holdExpiresAt" to holdExpiresAt,
                     "createdAt" to now,
                     "updatedAt" to now
                 ))
@@ -259,10 +240,9 @@ class FirebaseSeatRepository(
         }
     }
 
-    private fun isSeatTaken(status: String?, holdExpiresAt: Long?, now: Long): Boolean {
+    private fun isSeatTaken(status: String?): Boolean {
         return when (status) {
             "CONFIRMED", "USED" -> true
-            "PENDING_PAYMENT" -> holdExpiresAt != null && holdExpiresAt > now
             else -> false
         }
     }
@@ -311,6 +291,5 @@ class FirebaseSeatRepository(
 
     private companion object {
         private const val TAG = "FirebaseSeatRepository"
-        private const val HOLD_DURATION_MS = 15 * 60_000L
     }
 }
