@@ -1,6 +1,6 @@
 # BusBooking Current Development Flow
 
-Cap nhat: 2026-05-21, bo sung flow seat sync
+Cap nhat: 2026-05-22, bo sung flow VNPAY pending payment 5 phut va mo lai QR tu Ve cua toi
 
 Tai lieu nay la flow hien tai sau khi doc lai project Android app, admin-web, Firebase config, Functions va tools. Muc tieu la ghi ro cai gi da lam, cai gi chua lam, va nen tiep tuc theo thu tu nao.
 
@@ -13,8 +13,9 @@ Project dang di theo huong dung:
 - Firebase project chinh hien tai la `busbooking-f44f162d`.
 - Firestore la nguon du lieu chinh cho routes, buses, seats, trips, tickets, payments, tripSeats.
 - Room van con trong Android, hien dang lam local data cho mot so man cu va demo fallback.
-- VNPAY da co luong tao payment URL va QR payload tu `admin-web`; Android hien QR PNG base64 do server tra ve va khong con tao QR demo. Con thieu test sandbox end-to-end bang return/IPN URL public va man reload status sau khi user quay lai app.
+- VNPAY da co luong tao payment URL va QR payload tu `admin-web`; Android hien QR PNG base64 do server tra ve, reload status khi user quay lai app, va co the mo lai QR tu ve dang cho thanh toan.
 - Seat availability hien theo mot rule duy nhat tren app va admin: chi `tripSeats.status` = `CONFIRMED` hoac `USED` moi tinh la da ban/ghe den. `PENDING_PAYMENT` khong lam giam so ghe trong tren UI.
+- Ve `PENDING_PAYMENT` het han sau 5 phut. Khi qua han, app/admin-web chuyen ticket sang `PAYMENT_FAILED`, payment sang `EXPIRED`, va ve bien khoi danh sach active.
 
 ## Cau truc project
 
@@ -83,12 +84,14 @@ Splash
   -> Trip list
   -> Trip details
   -> Seat selection
-  -> Firestore transaction giu ghe
+  -> Firestore transaction tao tickets PENDING_PAYMENT + payments CREATED
   -> admin-web tao VNPAY payment URL + QR payload
   -> App hien QR/link tu payload nhan ve
   -> Mo browser thanh toan neu co URL that
   -> VNPAY return/IPN ve admin-web
   -> Admin-web cap nhat payments/tickets/tripSeats
+  -> Neu chua thanh toan: user vao Ve cua toi, bam ve cho thanh toan de mo lai QR
+  -> Neu qua 5 phut: payment EXPIRED, tickets PAYMENT_FAILED
 ```
 
 ### Login/Register
@@ -133,11 +136,11 @@ Da lam:
 
 - Home UI co search, banner, upcoming ticket, popular route, promotion.
 - Ten user lay tu `SessionManager`.
+- Upcoming tickets tren Home doc cung nguon Firestore voi `Ve cua toi` qua `FirebaseTicketRepository`, fallback Room neu Firestore loi.
+- Home tu refresh khi quay lai man hinh de ve vua thanh toan/huy/het han duoc cap nhat.
 
 Chua lam:
 
-- `HomeViewModel` van dung `AuthRepository`, `TicketRepository`, `RouteRepository` local Room.
-- Upcoming tickets tren Home van doc Room.
 - Popular routes tren Home van lay tu Room route data.
 - Banner/promotion la data tinh trong app.
 
@@ -176,7 +179,7 @@ Da lam:
   - dang chon
 - Da bo trang thai UI "dang giu".
 - Chi `CONFIRMED` va `USED` duoc map thanh `BOOKED`; cac status khac, bao gom `PENDING_PAYMENT`, khong lam den ghe tren UI.
-- Giu ghe bang Firestore transaction:
+- Tao checkout bang Firestore transaction. Hien tai transaction khong ghi `tripSeats` khi dang cho thanh toan; ghe chi duoc ghi vao `tripSeats` sau khi VNPAY thanh cong.
 
 ```text
 tickets/{ticketDoc}
@@ -186,24 +189,18 @@ tickets/{ticketDoc}
   tripId, seatId, busId
   paymentId
 
-tripSeats/{tripId}_{seatId}
-  status: PENDING_PAYMENT
-  holdExpiresAt
-  ticketId
-  ticketDocumentId
-  paymentId
-  userId
-
 payments/{paymentDoc}
   status: CREATED
   provider: VNPAY
   ticketDocumentIds[]
-  tripSeatIds[]
+  tripSeatIds[] = []
   amount
+  createdAt
+  updatedAt
 ```
 
-- Chan dat trung ghe neu `tripSeats` dang `CONFIRMED`, `USED`, `PENDING_PAYMENT`, `HELD` con han.
-- Chan double-submit luc thanh toan neu `tripSeats` dang `CONFIRMED`, `USED`, hoac `PENDING_PAYMENT` con `holdExpiresAt` chua het han. `PENDING_PAYMENT` cu khong co `holdExpiresAt` khong khoa ghe vinh vien.
+- Chan dat trung ghe neu `tripSeats` dang `CONFIRMED` hoac `USED`.
+- `PENDING_PAYMENT` khong khoa ghe tren UI va khong giam so ghe trong; neu user khong thanh toan trong 5 phut thi tickets/payment het han.
 - Multi-seat booking tao mot payment tong tien cho nhieu ticket.
 
 Da lam them:
@@ -213,8 +210,7 @@ Da lam them:
 
 Chua lam:
 
-- Chua co scheduled cleanup runtime chinh cho ghe giu qua han trong admin-web.
-- Chua co man reload payment/ticket status sau khi user quay lai app tu browser.
+- Chua co job nen dinh ky tren server de cleanup toan bo payment qua han neu khong co user nao mo app/admin-web cham vao payment do.
 
 ### Booking confirmation, My Tickets, Ticket Details
 
@@ -224,12 +220,16 @@ Da lam:
 - BookingConfirmation hien QR PNG base64 do admin-web tra ve, kem nut mo URL thanh toan VNPAY.
 - Da bo luong xac nhan demo/local khi khong tao duoc VNPAY URL.
 - `MyTicketsFragment`, `BookingHistoryFragment`, `TicketDetailsFragment` co duong doc ticket tu Firestore qua `FirebaseTicketRepository`, fallback ve Room neu Firestore loi.
+- Khi user quay lai app tu browser/VNPAY, BookingConfirmation reload ticket status tu Firestore.
+- Neu ve dang `PENDING_PAYMENT` nam trong `Ve cua toi`, user bam vao ve se mo lai BookingConfirmation, app goi lai admin-web de tao QR/link VNPAY neu payment con han.
+- Man thanh toan co nut huy. Huy thanh toan chuyen cac ticket cung `paymentId` sang `CANCELLED` va payment sang `CANCELLED`.
+- Ve cho thanh toan qua 5 phut bi chuyen `PAYMENT_FAILED` va khong con hien trong danh sach active.
 
 Chua lam:
 
-- Huy ve user van dung Room, chua release `tripSeats` tren Firestore.
 - BookingHistory hien tai van dung chung active-ticket loader, chua co query lich su day du tat ca trang thai.
-- Chua test VNPAY sandbox end-to-end voi public return/IPN URL.
+- Huy ve da thanh toan/refund user chua co flow Firestore day du.
+- VNPAY local tu emulator dung `10.0.2.2:8081`; test tren dien thoai that/IPN public van can ngrok/public URL.
 
 ## Flow Admin Web hien tai
 
@@ -305,9 +305,12 @@ VNPAY_RETURN_URL
   - `GET /api/payments/vnpay/return`
   - `GET /api/payments/vnpay/ipn`
   - create tra `paymentId`, `paymentUrl`, `qrContent`, `qrImageBase64`, `qrMimeType`, `amount`, `expiresAt`
+  - payment URL/QR het han sau 5 phut tinh tu `payments.createdAt`
+  - neu payment qua han khi tao QR lai: payment `EXPIRED`, tickets `PAYMENT_FAILED`
   - verify HMACSHA512
   - success: payment SUCCESS, tickets CONFIRMED, tripSeats CONFIRMED
-  - failed: payment FAILED, tickets PAYMENT_FAILED, xoa tripSeats
+  - failed: payment FAILED, tickets PAYMENT_FAILED
+  - callback den payment `EXPIRED`/`CANCELLED` duoc coi la closed, khong confirm ve
 - Seat admin sync:
   - Trip list/detail admin dem ghe da ban bang `tripSeats` status `CONFIRMED/USED`
   - Trip edit admin to ghe den khi status `CONFIRMED/USED`
@@ -354,12 +357,12 @@ Trang thai:
 
 - Chua phai runtime chinh hien tai, Android dang goi admin-web.
 - Functions VNPAY van xu ly theo model 1 ticket/1 seat (`ticketId`, `seatId`), trong khi Android/admin-web hien da ho tro multi-seat qua `ticketDocumentIds` va `tripSeatIds`.
-- `expirePendingPayments` query `payments.holdExpiresAt`, nhung payment Android hien chua ghi field nay. Hien `holdExpiresAt` nam o `tripSeats`.
+- `expirePendingPayments` query `payments.holdExpiresAt`, nhung runtime hien tai dung rule 5 phut tu `payments.createdAt` trong Android/admin-web. Android hien khong ghi `holdExpiresAt`.
 
 Can lam neu muon deploy Functions thay admin-web:
 
 - Dong bo multi-seat/multi-ticket.
-- Them `holdExpiresAt` vao payment hoac doi expire job sang `tripSeats`.
+- Doi expire job sang rule `payments.createdAt + 5 phut`, hoac them field `expiresAt` khi tao payment.
 - Cau hinh secrets VNPAY.
 - Deploy va doi Android goi callable/HTTPS Functions.
 
@@ -488,14 +491,12 @@ updatedAt
 ```text
 tripId
 seatId
-seatNumber
 ticketId
 ticketDocumentId
 paymentId
 userId
 userNumericId
 status
-holdExpiresAt
 createdAt
 updatedAt
 ```
@@ -504,7 +505,7 @@ Quy uoc status ghe:
 
 ```text
 CONFIRMED, USED      -> da ban, giam availableSeats, UI to den
-PENDING_PAYMENT      -> chi dung de chan submit trung trong luc thanh toan con han, khong hien "dang giu"
+PENDING_PAYMENT      -> khong ghi vao tripSeats trong runtime hien tai
 PAYMENT_FAILED/null  -> coi nhu ghe trong
 ```
 
@@ -610,9 +611,12 @@ Dung `clean` neu Gradle incremental build bi lech sau khi them/xoa nhieu file ad
 - Route search dung Firestore.
 - Trip list/details dung Firestore.
 - Seat selection dung Firestore.
-- Booking hold dung Firestore transaction.
+- Booking checkout dung Firestore transaction: tao tickets `PENDING_PAYMENT` va payment `CREATED`, khong ghi `tripSeats` cho trang thai cho thanh toan.
 - Goi admin-web tao VNPAY URL + QR payload; BookingConfirmation hien QR server tra ve.
 - MyTickets/TicketDetails doc ticket Firestore sau khi VNPAY callback cap nhat status.
+- Home upcoming tickets doc Firestore cung nguon voi MyTickets.
+- Ve dang cho thanh toan trong MyTickets mo lai QR/link VNPAY neu con han; co nut huy thanh toan.
+- Pending payment qua 5 phut: tickets `PAYMENT_FAILED`, payment `EXPIRED`.
 - Bo success demo fallback khi Firestore reserve seats loi.
 - Admin route tu Android login/splash da bi chan.
 - Bo trang thai ghe dang giu tren UI.
@@ -628,7 +632,7 @@ Dung `clean` neu Gradle incremental build bi lech sau khi them/xoa nhieu file ad
 - Routes/Buses/Trips CRUD co ban.
 - Seats theo bus.
 - Users/Tickets/Payments list co ban.
-- VNPAY create/return/ipn co luong tao signed URL + QR payload, chua test sandbox end-to-end bang public return/IPN URL.
+- VNPAY create/return/ipn co luong tao signed URL + QR payload, gioi han payment 5 phut va dong payment het han.
 - Fix Routes/Buses/Trips tra 500 do `demoMode` null.
 - Routes/Buses/Trips da doc du lieu Firestore that sau reset nho.
 
@@ -647,11 +651,11 @@ Dung `clean` neu Gradle incremental build bi lech sau khi them/xoa nhieu file ad
 
 Uu tien cao:
 
-1. Chuyen Home upcoming tickets va popular routes sang Firestore.
-2. Sau khi VNPAY return ve app/web, app phai reload payment/ticket status tu Firestore.
-3. Viet lai Firestore rules theo role/schema, khong de `allow read, write: if true`.
-4. Test VNPAY sandbox end-to-end bang public URL/ngrok.
-5. Them cleanup ghe/payment qua han cho flow runtime chinh.
+1. Chuyen Home popular routes sang Firestore.
+2. Viet lai Firestore rules theo role/schema, khong de `allow read, write: if true`.
+3. Test VNPAY sandbox bang dien thoai that/IPN public URL/ngrok neu khong dung emulator.
+4. Them job cleanup nen cho pending payments qua han.
+5. Them lich su ve day du tat ca status.
 
 Uu tien trung binh:
 
@@ -672,10 +676,10 @@ Bao mat:
 ## Thu tu lam tiep de it rui ro
 
 ```text
-1. BookingConfirmation reload payment/ticket status
-2. VNPAY ngrok sandbox end-to-end
-3. Expire pending payment/hold
-4. Firestore rules chat lai
+1. Firestore rules chat lai
+2. Job cleanup pending payment qua han
+3. BookingHistory query day du tat ca status
+4. VNPAY ngrok/public URL cho dien thoai that va IPN
 5. Admin audit + validate nghiep vu
 6. Don Room/admin Android legacy
 ```

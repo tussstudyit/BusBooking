@@ -8,14 +8,24 @@ import com.example.busbooking.data.entity.Trip
 import com.example.busbooking.data.entity.User
 import com.example.busbooking.data.relations.TicketDetails
 import com.example.busbooking.data.relations.TripWithRouteAndBus
+import com.example.busbooking.data.relations.isTicketHistory
+import com.example.busbooking.data.relations.isUpcomingTicket
+import com.example.busbooking.data.relations.tripScheduleMillis
 import com.example.busbooking.domain.models.Result
 import com.example.busbooking.utils.SessionManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
+
+data class PendingPaymentSession(
+    val paymentId: String,
+    val amount: Double,
+    val expiresAt: Long
+)
 
 class FirebaseTicketRepository(
     private val authProvider: () -> FirebaseAuth = { FirebaseAuth.getInstance() },
@@ -28,38 +38,153 @@ class FirebaseTicketRepository(
     private val trips get() = firestore.collection("trips")
     private val routes get() = firestore.collection("routes")
     private val buses get() = firestore.collection("buses")
+    private val payments get() = firestore.collection("payments")
 
     suspend fun getUserActiveTickets(userId: Long): Result<List<TicketDetails>> = withContext(Dispatchers.IO) {
         try {
             val uid = auth.currentUser?.uid
-                ?: return@withContext Result.Error(Exception("No Firebase user"), "Vui lòng đăng nhập lại")
+            if (uid.isNullOrBlank() && userId <= 0L) {
+                return@withContext Result.Error(
+                    Exception("No Firebase user"),
+                    "Vui l\u00f2ng \u0111\u0103ng nh\u1eadp l\u1ea1i"
+                )
+            }
 
-            val details = tickets
-                .whereEqualTo("userId", uid)
-                .get()
-                .await()
-                .documents
-                .filter { document ->
-                    document.getString("status") in ACTIVE_STATUSES
+            val documents = findUserTicketDocuments(userId)
+            val now = System.currentTimeMillis()
+
+            val details = documents.values
+                .mapNotNull { document ->
+                    val status = document.getString("status")
+                    if (status !in ACTIVE_STATUSES) return@mapNotNull null
+                    if (status in PENDING_PAYMENT_STATUSES && isPendingPaymentExpired(document)) {
+                        runCatching { expirePendingPayment(document) }
+                        return@mapNotNull null
+                    }
+                    toTicketDetails(document, userId)
                 }
-                .mapNotNull { document -> toTicketDetails(document, userId) }
-                .sortedByDescending { it.ticket.bookingTime }
+                .filter { it.isUpcomingTicket(now) }
+                .sortedWith(
+                    compareBy<TicketDetails> { it.tripScheduleMillis().takeIf { time -> time > 0L } ?: Long.MAX_VALUE }
+                        .thenByDescending { it.ticket.bookingTime }
+                )
 
             Result.Success(details)
         } catch (e: Exception) {
-            Result.Error(e, "Không thể tải vé từ Firestore: ${e.message}")
+            Result.Error(e, "Kh\u00f4ng th\u1ec3 t\u1ea3i v\u00e9 t\u1eeb Firestore: ${e.message}")
+        }
+    }
+
+    suspend fun getUserTicketHistory(userId: Long): Result<List<TicketDetails>> = withContext(Dispatchers.IO) {
+        try {
+            val uid = auth.currentUser?.uid
+            if (uid.isNullOrBlank() && userId <= 0L) {
+                return@withContext Result.Error(
+                    Exception("No Firebase user"),
+                    "Vui l\u00f2ng \u0111\u0103ng nh\u1eadp l\u1ea1i"
+                )
+            }
+
+            val documents = findUserTicketDocuments(userId)
+            val now = System.currentTimeMillis()
+            val details = documents.values
+                .mapNotNull { document ->
+                    if (document.getString("status") in PENDING_PAYMENT_STATUSES && isPendingPaymentExpired(document)) {
+                        runCatching { expirePendingPayment(document) }
+                        return@mapNotNull null
+                    }
+                    toTicketDetails(document, userId)
+                }
+                .filter { it.isTicketHistory(now) }
+                .sortedWith(
+                    compareByDescending<TicketDetails> { it.tripScheduleMillis() }
+                        .thenByDescending { it.ticket.bookingTime }
+                )
+
+            Result.Success(details)
+        } catch (e: Exception) {
+            Result.Error(e, "Kh\u00f4ng th\u1ec3 t\u1ea3i l\u1ecbch s\u1eed v\u00e9 t\u1eeb Firestore: ${e.message}")
         }
     }
 
     suspend fun getTicketById(ticketId: Long): Result<TicketDetails> = withContext(Dispatchers.IO) {
         try {
             val document = findTicketDocument(ticketId)
-                ?: return@withContext Result.Error(Exception("Not found"), "Không tìm thấy vé")
+                ?: return@withContext Result.Error(Exception("Not found"), "Kh\u00f4ng t\u00ecm th\u1ea5y v\u00e9")
+            if (document.getString("status") in PENDING_PAYMENT_STATUSES && isPendingPaymentExpired(document)) {
+                runCatching { expirePendingPayment(document) }
+                return@withContext Result.Error(Exception("Expired"), "Phi\u00ean thanh to\u00e1n \u0111\u00e3 qu\u00e1 5 ph\u00fat")
+            }
             val details = toTicketDetails(document, SessionManager.getCurrentUserId())
-                ?: return@withContext Result.Error(Exception("Invalid ticket"), "Dữ liệu vé không hợp lệ")
+                ?: return@withContext Result.Error(Exception("Invalid ticket"), "D\u1eef li\u1ec7u v\u00e9 kh\u00f4ng h\u1ee3p l\u1ec7")
             Result.Success(details)
         } catch (e: Exception) {
-            Result.Error(e, "Không thể tải chi tiết vé từ Firestore: ${e.message}")
+            Result.Error(e, "Kh\u00f4ng th\u1ec3 t\u1ea3i chi ti\u1ebft v\u00e9 t\u1eeb Firestore: ${e.message}")
+        }
+    }
+
+    suspend fun getPendingPaymentSession(ticketId: Long): Result<PendingPaymentSession> = withContext(Dispatchers.IO) {
+        try {
+            val ticket = findTicketDocument(ticketId)
+                ?: return@withContext Result.Error(Exception("Not found"), "Kh\u00f4ng t\u00ecm th\u1ea5y v\u00e9")
+            val status = ticket.getString("status")
+            if (status !in PENDING_PAYMENT_STATUSES) {
+                return@withContext Result.Error(Exception("Invalid status"), "V\u00e9 n\u00e0y kh\u00f4ng c\u00f2n ch\u1edd thanh to\u00e1n")
+            }
+            if (isPendingPaymentExpired(ticket)) {
+                runCatching { expirePendingPayment(ticket) }
+                return@withContext Result.Error(Exception("Expired"), "Phi\u00ean thanh to\u00e1n \u0111\u00e3 qu\u00e1 5 ph\u00fat")
+            }
+
+            val paymentId = ticket.getString("paymentId").orEmpty()
+            if (paymentId.isBlank()) {
+                return@withContext Result.Error(Exception("Missing paymentId"), "V\u00e9 ch\u01b0a c\u00f3 m\u00e3 thanh to\u00e1n")
+            }
+
+            val payment = payments.document(paymentId).get().await()
+            if (!payment.exists()) {
+                return@withContext Result.Error(Exception("Payment not found"), "Kh\u00f4ng t\u00ecm th\u1ea5y phi\u00ean thanh to\u00e1n")
+            }
+            if (payment.getString("status") in PAYMENT_TERMINAL_STATUSES) {
+                return@withContext Result.Error(Exception("Payment closed"), "Phi\u00ean thanh to\u00e1n \u0111\u00e3 k\u1ebft th\u00fac")
+            }
+
+            val expiresAt = pendingPaymentExpiresAt(ticket, payment)
+            if (System.currentTimeMillis() > expiresAt) {
+                runCatching { expirePendingPayment(ticket) }
+                return@withContext Result.Error(Exception("Expired"), "Phi\u00ean thanh to\u00e1n \u0111\u00e3 qu\u00e1 5 ph\u00fat")
+            }
+
+            Result.Success(
+                PendingPaymentSession(
+                    paymentId = paymentId,
+                    amount = doubleValue(payment.get("amount")) ?: 0.0,
+                    expiresAt = expiresAt
+                )
+            )
+        } catch (e: Exception) {
+            Result.Error(e, "Kh\u00f4ng th\u1ec3 t\u1ea3i phi\u00ean thanh to\u00e1n: ${e.message}")
+        }
+    }
+
+    suspend fun cancelPendingPayment(ticketId: Long): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val ticket = findTicketDocument(ticketId)
+                ?: return@withContext Result.Error(Exception("Not found"), "Kh\u00f4ng t\u00ecm th\u1ea5y v\u00e9")
+            val status = ticket.getString("status")
+            if (status !in PENDING_PAYMENT_STATUSES) {
+                return@withContext Result.Error(Exception("Invalid status"), "Ch\u1ec9 c\u00f3 th\u1ec3 h\u1ee7y v\u00e9 \u0111ang ch\u1edd thanh to\u00e1n")
+            }
+
+            updatePendingPaymentTickets(
+                ticket = ticket,
+                ticketStatus = "CANCELLED",
+                paymentStatus = "CANCELLED",
+                reason = "Ng\u01b0\u1eddi d\u00f9ng h\u1ee7y thanh to\u00e1n"
+            )
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            Result.Error(e, "Kh\u00f4ng th\u1ec3 h\u1ee7y thanh to\u00e1n: ${e.message}")
         }
     }
 
@@ -100,6 +225,26 @@ class FirebaseTicketRepository(
             .await()
             .documents
             .firstOrNull()
+    }
+
+    private suspend fun findUserTicketDocuments(userId: Long): LinkedHashMap<String, DocumentSnapshot> {
+        val uid = auth.currentUser?.uid
+        val documents = linkedMapOf<String, DocumentSnapshot>()
+        if (!uid.isNullOrBlank()) {
+            tickets.whereEqualTo("userId", uid)
+                .get()
+                .await()
+                .documents
+                .forEach { documents[it.id] = it }
+        }
+        if (userId > 0L) {
+            tickets.whereEqualTo("userNumericId", userId)
+                .get()
+                .await()
+                .documents
+                .forEach { documents[it.id] = it }
+        }
+        return documents
     }
 
     private suspend fun findUser(uid: String?, fallbackUserId: Long): User {
@@ -253,12 +398,74 @@ class FirebaseTicketRepository(
 
     private fun doubleValue(value: Any?): Double? = (value as? Number)?.toDouble()
 
+    private fun isPendingPaymentExpired(ticket: DocumentSnapshot): Boolean {
+        return System.currentTimeMillis() > pendingPaymentExpiresAt(ticket)
+    }
+
+    private fun pendingPaymentExpiresAt(
+        ticket: DocumentSnapshot,
+        payment: DocumentSnapshot? = null
+    ): Long {
+        val createdAt = longValue(payment?.get("createdAt"))
+            ?: longValue(ticket.get("createdAt"))
+            ?: longValue(ticket.get("bookingTime"))
+            ?: 0L
+        return createdAt + PENDING_PAYMENT_TIMEOUT_MS
+    }
+
+    private suspend fun expirePendingPayment(ticket: DocumentSnapshot) {
+        updatePendingPaymentTickets(
+            ticket = ticket,
+            ticketStatus = "PAYMENT_FAILED",
+            paymentStatus = "EXPIRED",
+            reason = "Phi\u00ean thanh to\u00e1n qu\u00e1 5 ph\u00fat"
+        )
+    }
+
+    private suspend fun updatePendingPaymentTickets(
+        ticket: DocumentSnapshot,
+        ticketStatus: String,
+        paymentStatus: String,
+        reason: String
+    ) {
+        val paymentId = ticket.getString("paymentId").orEmpty()
+        val queriedTickets = if (paymentId.isBlank()) {
+            emptyList()
+        } else {
+            tickets.whereEqualTo("paymentId", paymentId).get().await().documents
+        }
+        val relatedTickets = queriedTickets.ifEmpty { listOf(ticket) }
+
+        val now = System.currentTimeMillis()
+        val batch = firestore.batch()
+        relatedTickets
+            .filter { it.getString("status") in PENDING_PAYMENT_STATUSES }
+            .forEach { document ->
+                batch.update(document.reference, mapOf(
+                    "status" to ticketStatus,
+                    "cancellationReason" to reason,
+                    "updatedAt" to now
+                ))
+            }
+        if (paymentId.isNotBlank()) {
+            batch.set(payments.document(paymentId), mapOf(
+                "status" to paymentStatus,
+                "failureReason" to reason,
+                "updatedAt" to now
+            ), SetOptions.merge())
+        }
+        batch.commit().await()
+    }
+
     private fun String.toStableLongId(): Long {
         return fold(1125899906842597L) { hash, char -> 31 * hash + char.code }
             .let { if (it == Long.MIN_VALUE) 0L else kotlin.math.abs(it) }
     }
 
     private companion object {
+        private const val PENDING_PAYMENT_TIMEOUT_MS = 5 * 60 * 1000L
         private val ACTIVE_STATUSES = setOf("PENDING", "PENDING_PAYMENT", "CONFIRMED")
+        private val PENDING_PAYMENT_STATUSES = setOf("PENDING", "PENDING_PAYMENT")
+        private val PAYMENT_TERMINAL_STATUSES = setOf("SUCCESS", "FAILED", "EXPIRED", "CANCELLED")
     }
 }

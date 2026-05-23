@@ -8,12 +8,15 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
+import com.example.busbooking.domain.repository.TestDataRepository
 import com.example.busbooking.utils.SessionManager
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.firebase.FirebaseApp
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 
@@ -32,6 +35,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         SessionManager.initialize(this)
+        refreshRollingTestData()
 
         // Lấy NavController từ NavHostFragment
         val navHostFragment = supportFragmentManager
@@ -60,6 +64,17 @@ class MainActivity : AppCompatActivity() {
         }
 
         handlePaymentReturnIntent(intent)
+    }
+
+    private fun refreshRollingTestData() {
+        if (!BuildConfig.DEBUG) return
+        lifecycleScope.launch {
+            TestDataRepository()
+                .refreshRollingTrips()
+                .onFailure { error ->
+                    Log.w("BusBookingTestData", "Cannot refresh rolling test data: ${error.message}")
+                }
+        }
     }
 
     override fun onNewIntent(intent: Intent) {

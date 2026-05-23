@@ -32,6 +32,14 @@ android {
             "ADMIN_WEB_BASE_URL",
             "\"${localProperties.getProperty("admin.web.baseUrl", "http://10.0.2.2:8081")}\""
         )
+        buildConfigField(
+            "String",
+            "ADMIN_WEB_BASE_URLS",
+            "\"${localProperties.getProperty(
+                "admin.web.baseUrls",
+                localProperties.getProperty("admin.web.baseUrl", "http://10.0.2.2:8081")
+            )}\""
+        )
     }
 
     buildTypes {

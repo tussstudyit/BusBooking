@@ -32,6 +32,16 @@ public class VnpayPaymentController {
         }
     }
 
+    @PostMapping("/api/payments/vnpay/cancel")
+    public Map<String, String> cancel(@RequestParam String paymentId) {
+        try {
+            vnpayPaymentService.cancelPayment(paymentId);
+            return Map.of("code", "00", "message", "Payment cancelled", "paymentId", paymentId);
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            return Map.of("code", "99", "message", rootMessage(e), "paymentId", paymentId);
+        }
+    }
+
     @GetMapping("/api/payments/vnpay/ipn")
     public Map<String, String> ipn(@RequestParam Map<String, String> params) {
         return vnpayPaymentService.handleCallback(params);

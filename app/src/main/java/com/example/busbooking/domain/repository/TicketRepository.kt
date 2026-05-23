@@ -5,6 +5,8 @@ import com.example.busbooking.data.dao.SeatDAO
 import com.example.busbooking.data.dao.TicketDAO
 import com.example.busbooking.data.entity.Ticket
 import com.example.busbooking.data.relations.TicketDetails
+import com.example.busbooking.data.relations.isTicketHistory
+import com.example.busbooking.data.relations.isUpcomingTicket
 import com.example.busbooking.domain.models.BookingResult
 import com.example.busbooking.domain.models.Result
 import kotlinx.coroutines.Dispatchers
@@ -82,10 +84,24 @@ class TicketRepository(
     suspend fun getUserActiveTickets(userId: Long): Result<List<TicketDetails>> = 
         withContext(Dispatchers.IO) {
             try {
-                val tickets = ticketDAO.getUserActiveTickets(userId)
+                val now = System.currentTimeMillis()
+                val tickets = ticketDAO.getUserTickets(userId)
+                    .filter { it.isUpcomingTicket(now) }
                 Result.Success(tickets)
             } catch (e: Exception) {
                 Result.Error(e, "Error fetching tickets: ${e.message}")
+            }
+        }
+
+    suspend fun getUserTicketHistory(userId: Long): Result<List<TicketDetails>> =
+        withContext(Dispatchers.IO) {
+            try {
+                val now = System.currentTimeMillis()
+                val tickets = ticketDAO.getUserTickets(userId)
+                    .filter { it.isTicketHistory(now) }
+                Result.Success(tickets)
+            } catch (e: Exception) {
+                Result.Error(e, "Error fetching ticket history: ${e.message}")
             }
         }
 

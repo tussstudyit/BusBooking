@@ -8,15 +8,24 @@ import com.example.busbooking.data.relations.TicketDetails
 import com.example.busbooking.domain.models.Result
 import com.example.busbooking.domain.repository.FirebaseTicketRepository
 import com.example.busbooking.domain.repository.TicketRepository
+import com.example.busbooking.domain.repository.VnpayPaymentPayload
+import com.example.busbooking.domain.repository.VnpayRepository
 import kotlinx.coroutines.launch
 
 class BookingConfirmationViewModel(
     private val ticketRepository: TicketRepository,
-    private val firebaseTicketRepository: FirebaseTicketRepository = FirebaseTicketRepository()
+    private val firebaseTicketRepository: FirebaseTicketRepository = FirebaseTicketRepository(),
+    private val vnpayRepository: VnpayRepository = VnpayRepository()
 ) : ViewModel() {
 
     private val _ticket = MutableLiveData<TicketDetails?>(null)
     val ticket: LiveData<TicketDetails?> = _ticket
+
+    private val _paymentPayload = MutableLiveData<VnpayPaymentPayload?>(null)
+    val paymentPayload: LiveData<VnpayPaymentPayload?> = _paymentPayload
+
+    private val _cancelSuccess = MutableLiveData(false)
+    val cancelSuccess: LiveData<Boolean> = _cancelSuccess
 
     private val _error = MutableLiveData<String?>(null)
     val error: LiveData<String?> = _error
@@ -29,6 +38,49 @@ class BookingConfirmationViewModel(
                 Result.Loading -> Unit
             }
         }
+    }
+
+    fun loadPendingPayment(ticketId: Long) {
+        _paymentPayload.value = null
+        viewModelScope.launch {
+            when (val session = firebaseTicketRepository.getPendingPaymentSession(ticketId)) {
+                is Result.Success -> {
+                    vnpayRepository.createPaymentPayload(session.data.paymentId)
+                        .onSuccess { payload -> _paymentPayload.value = payload }
+                        .onFailure { error ->
+                            _error.value = error.message ?: "Kh\u00f4ng th\u1ec3 t\u1ea1o l\u1ea1i m\u00e3 QR VNPAY"
+                        }
+                }
+                is Result.Error -> {
+                    _error.value = session.message
+                    loadTicket(ticketId)
+                }
+                Result.Loading -> Unit
+            }
+        }
+    }
+
+    fun cancelPendingPayment(ticketId: Long) {
+        viewModelScope.launch {
+            when (val session = firebaseTicketRepository.getPendingPaymentSession(ticketId)) {
+                is Result.Success -> {
+                    vnpayRepository.cancelPayment(session.data.paymentId)
+                        .onSuccess {
+                            _cancelSuccess.value = true
+                            loadTicket(ticketId)
+                        }
+                        .onFailure { error ->
+                            _error.value = error.message ?: "Kh\u00f4ng th\u1ec3 h\u1ee7y thanh to\u00e1n"
+                        }
+                }
+                is Result.Error -> _error.value = session.message
+                Result.Loading -> Unit
+            }
+        }
+    }
+
+    fun clearError() {
+        _error.value = null
     }
 
     private suspend fun loadLocalTicket(ticketId: Long, fallbackError: String) {

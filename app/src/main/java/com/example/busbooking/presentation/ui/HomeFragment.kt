@@ -85,6 +85,7 @@ class HomeFragment : Fragment() {
     private var isRoundTrip: Boolean = false
     private var originTag: String = ""
     private var destinationTag: String = ""
+    private var refreshHomeOnResume: Boolean = false
 
     // ─── Real-time date updater ───────────────────────────────────────────────
     private val dateHandler = Handler(Looper.getMainLooper())
@@ -133,6 +134,15 @@ class HomeFragment : Fragment() {
         setupListeners()
         observeViewModel()
         viewModel.loadHome()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (refreshHomeOnResume) {
+            viewModel.refresh()
+        } else {
+            refreshHomeOnResume = true
+        }
     }
 
     override fun onDestroyView() {

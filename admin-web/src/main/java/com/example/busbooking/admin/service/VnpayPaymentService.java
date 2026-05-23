@@ -20,6 +20,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -40,6 +41,7 @@ import org.springframework.util.StringUtils;
 public class VnpayPaymentService {
     private static final ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
     private static final DateTimeFormatter VNPAY_DATE = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+    private static final long PAYMENT_TIMEOUT_MILLIS = 5 * 60 * 1000L;
 
     private final Firestore firestore;
     private final VnpayProperties properties;
@@ -63,11 +65,28 @@ public class VnpayPaymentService {
                 throw new IllegalArgumentException("Invalid payment amount");
             }
 
+            String paymentStatus = payment.getString("status");
+            if (!"CREATED".equals(paymentStatus) && !"PENDING".equals(paymentStatus)) {
+                throw new IllegalArgumentException("Payment is no longer payable");
+            }
+
+            long nowMillis = System.currentTimeMillis();
+            long createdAtMillis = FirestoreMapper.longValue(payment, "createdAt") != null
+                    ? FirestoreMapper.longValue(payment, "createdAt")
+                    : nowMillis;
+            long expiresAtMillis = createdAtMillis + PAYMENT_TIMEOUT_MILLIS;
+            if (nowMillis > expiresAtMillis) {
+                expirePayment(paymentRef, payment);
+                throw new IllegalArgumentException("Payment expired");
+            }
+
             LocalDateTime now = LocalDateTime.now(VN_ZONE);
-            LocalDateTime expiresAtDate = now.plusMinutes(15);
+            LocalDateTime expiresAtDate = LocalDateTime.ofInstant(
+                    Instant.ofEpochMilli(expiresAtMillis),
+                    VN_ZONE
+            );
             String createDate = now.format(VNPAY_DATE);
             String expireDate = expiresAtDate.format(VNPAY_DATE);
-            long expiresAtMillis = expiresAtDate.atZone(VN_ZONE).toInstant().toEpochMilli();
 
             Map<String, String> params = new TreeMap<>();
             params.put("vnp_Version", "2.1.0");
@@ -141,6 +160,9 @@ public class VnpayPaymentService {
             if ("FAILED".equals(currentStatus)) {
                 return Map.of("RspCode", "00", "Message", "Payment already failed");
             }
+            if ("EXPIRED".equals(currentStatus) || "CANCELLED".equals(currentStatus)) {
+                return Map.of("RspCode", "00", "Message", "Payment is closed");
+            }
 
             String responseCode = params.get("vnp_ResponseCode");
             String transactionStatus = params.get("vnp_TransactionStatus");
@@ -155,6 +177,36 @@ public class VnpayPaymentService {
             return Map.of("RspCode", "00", "Message", "Payment failed");
         } catch (Exception e) {
             return Map.of("RspCode", "99", "Message", "Unknown error");
+        }
+    }
+
+    public void cancelPayment(String paymentId) {
+        if (!StringUtils.hasText(paymentId)) {
+            throw new IllegalArgumentException("Missing payment id");
+        }
+        try {
+            DocumentReference paymentRef = firestore.collection("payments").document(paymentId);
+            DocumentSnapshot payment = paymentRef.get().get();
+            if (!payment.exists()) {
+                throw new IllegalArgumentException("Payment not found");
+            }
+
+            String currentStatus = payment.getString("status");
+            if ("SUCCESS".equals(currentStatus)) {
+                throw new IllegalStateException("Payment already succeeded");
+            }
+            if ("CANCELLED".equals(currentStatus)) {
+                return;
+            }
+            if ("FAILED".equals(currentStatus) || "EXPIRED".equals(currentStatus)) {
+                return;
+            }
+
+            cancelPaymentDocuments(paymentRef, payment, "Nguoi dung huy thanh toan");
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not cancel payment", e);
         }
     }
 
@@ -222,6 +274,51 @@ public class VnpayPaymentService {
                     "status", "PAYMENT_FAILED",
                     "updatedAt", now
             ));
+        }
+
+        batch.commit().get();
+    }
+
+    private void expirePayment(DocumentReference paymentRef, DocumentSnapshot payment) throws Exception {
+        WriteBatch batch = firestore.batch();
+        long now = System.currentTimeMillis();
+        batch.update(paymentRef, Map.of(
+                "status", "EXPIRED",
+                "failureReason", "Payment expired after 5 minutes",
+                "updatedAt", now
+        ));
+
+        for (String ticketDocumentId : stringList(payment.get("ticketDocumentIds"))) {
+            batch.update(firestore.collection("tickets").document(ticketDocumentId), Map.of(
+                    "status", "PAYMENT_FAILED",
+                    "cancellationReason", "Phi\u00ean thanh to\u00e1n qu\u00e1 5 ph\u00fat",
+                    "updatedAt", now
+            ));
+        }
+
+        batch.commit().get();
+    }
+
+    private void cancelPaymentDocuments(DocumentReference paymentRef, DocumentSnapshot payment, String reason) throws Exception {
+        WriteBatch batch = firestore.batch();
+        long now = System.currentTimeMillis();
+        batch.update(paymentRef, Map.of(
+                "status", "CANCELLED",
+                "failureReason", reason,
+                "updatedAt", now
+        ));
+
+        for (String ticketDocumentId : stringList(payment.get("ticketDocumentIds"))) {
+            DocumentReference ticketRef = firestore.collection("tickets").document(ticketDocumentId);
+            DocumentSnapshot ticket = ticketRef.get().get();
+            String ticketStatus = ticket.getString("status");
+            if ("PENDING".equals(ticketStatus) || "PENDING_PAYMENT".equals(ticketStatus)) {
+                batch.update(ticketRef, Map.of(
+                        "status", "CANCELLED",
+                        "cancellationReason", reason,
+                        "updatedAt", now
+                ));
+            }
         }
 
         batch.commit().get();

@@ -59,6 +59,14 @@ interface TicketDAO {
         WHERE userId = :userId
         ORDER BY bookingTime DESC
     """)
+    suspend fun getUserTickets(userId: Long): List<TicketDetails>
+
+    @Transaction
+    @Query("""
+        SELECT * FROM tickets 
+        WHERE userId = :userId
+        ORDER BY bookingTime DESC
+    """)
     fun getUserTicketHistory(userId: Long): Flow<List<TicketDetails>>
 
     @Transaction

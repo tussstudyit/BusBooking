@@ -91,6 +91,9 @@
         <action
             android:id="@+id/action_myTicketsFragment_to_ticketDetailsFragment"
             app:destination="@id/ticketDetailsFragment" />
+        <action
+            android:id="@+id/action_myTicketsFragment_to_bookingConfirmationFragment"
+            app:destination="@id/bookingConfirmationFragment" />
     </fragment>
 
     <fragment

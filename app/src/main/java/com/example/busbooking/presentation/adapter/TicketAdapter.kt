@@ -9,6 +9,8 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.busbooking.R
 import com.example.busbooking.data.relations.TicketDetails
+import com.example.busbooking.data.relations.hasTripDeparted
+import com.example.busbooking.data.relations.tripScheduleMillis
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -37,19 +39,22 @@ class TicketAdapter(
         fun bind(details: TicketDetails) {
             val trip = details.tripWithRouteAndBus.trip
             val route = details.tripWithRouteAndBus.route
-            routeText.text = "${route.origin} -> ${route.destination}"
-            statusText.text = statusLabel(details.ticket.status)
-            dateText.text = dateFormat.format(Date(trip.departureTime))
-            seatText.text = "Ghế ${details.seat.seatNumber}"
-            priceText.text = "${String.format("%,.0f", trip.price)} VNĐ"
+            val scheduleMillis = details.tripScheduleMillis()
+            routeText.text = "${route.origin} \u2192 ${route.destination}"
+            statusText.text = statusLabel(details.ticket.status, details.hasTripDeparted())
+            dateText.text = if (scheduleMillis > 0L) dateFormat.format(Date(scheduleMillis)) else "--/--/---- --:--"
+            seatText.text = "Gh\u1ebf ${details.seat.seatNumber}"
+            priceText.text = "${String.format("%,.0f", trip.price)} VN\u0110"
             itemView.setOnClickListener { onItemClick(details) }
         }
 
-        private fun statusLabel(status: String): String = when (status) {
-            "CONFIRMED" -> "Đã xác nhận"
-            "PENDING", "PENDING_PAYMENT" -> "Chờ thanh toán"
-            "USED" -> "Đã đi"
-            "CANCELLED" -> "Đã hủy"
+        private fun statusLabel(status: String, hasTripDeparted: Boolean): String = when {
+            hasTripDeparted && status == "CONFIRMED" -> "\u0110\u00e3 \u0111i"
+            status == "CONFIRMED" -> "\u0110\u00e3 x\u00e1c nh\u1eadn"
+            status == "PENDING" || status == "PENDING_PAYMENT" -> "Ch\u1edd thanh to\u00e1n"
+            status == "PAYMENT_FAILED" -> "Thanh to\u00e1n th\u1ea5t b\u1ea1i"
+            status == "USED" -> "\u0110\u00e3 \u0111i"
+            status == "CANCELLED" -> "\u0110\u00e3 h\u1ee7y"
             else -> status
         }
     }

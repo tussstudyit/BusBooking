@@ -446,6 +446,18 @@
             app:cornerRadius="12dp" />
 
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/cancelPaymentButton"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:text="Hủy thanh toán"
+            android:textColor="@color/error"
+            app:backgroundTint="@color/background_white"
+            app:cornerRadius="12dp"
+            app:strokeColor="@color/error"
+            app:strokeWidth="1dp" />
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/viewTicketsButton"
             android:layout_width="match_parent"
             android:layout_height="48dp"

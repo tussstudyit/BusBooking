@@ -67,8 +67,33 @@ class UserViewModel(
         }
     }
 
+    fun loadTicketHistory() {
+        val userId = SessionManager.getCurrentUserId()
+        if (userId <= 0) {
+            _userState.value = UserState.TicketsLoaded(emptyList())
+            return
+        }
+
+        viewModelScope.launch {
+            _userState.value = UserState.Loading
+            when (val result = firebaseTicketRepository.getUserTicketHistory(userId)) {
+                is Result.Success -> _userState.value = UserState.TicketsLoaded(result.data)
+                is Result.Error -> loadLocalTicketHistory(userId, result.message)
+                Result.Loading -> Unit
+            }
+        }
+    }
+
     private suspend fun loadLocalTickets(userId: Long, fallbackError: String) {
         when (val result = ticketRepository.getUserActiveTickets(userId)) {
+            is Result.Success -> _userState.value = UserState.TicketsLoaded(result.data)
+            is Result.Error -> _userState.value = UserState.Error(fallbackError)
+            Result.Loading -> Unit
+        }
+    }
+
+    private suspend fun loadLocalTicketHistory(userId: Long, fallbackError: String) {
+        when (val result = ticketRepository.getUserTicketHistory(userId)) {
             is Result.Success -> _userState.value = UserState.TicketsLoaded(result.data)
             is Result.Error -> _userState.value = UserState.Error(fallbackError)
             Result.Loading -> Unit

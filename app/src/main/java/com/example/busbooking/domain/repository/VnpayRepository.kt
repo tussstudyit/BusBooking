@@ -1,9 +1,9 @@
 package com.example.busbooking.domain.repository
 
-import com.example.busbooking.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import java.io.IOException
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
@@ -20,14 +20,57 @@ data class VnpayPaymentPayload(
 )
 
 class VnpayRepository(
-    private val baseUrl: String = BuildConfig.ADMIN_WEB_BASE_URL
+    private val baseUrls: List<String> = AdminWebConfig.baseUrls
 ) {
     suspend fun createPaymentUrl(paymentId: String): Result<String> {
         return createPaymentPayload(paymentId).map { it.paymentUrl }
     }
 
+    suspend fun cancelPayment(paymentId: String): Result<Unit> = withContext(Dispatchers.IO) {
+        requestWithFallback { baseUrl -> cancelPayment(baseUrl, paymentId) }
+    }
+
     suspend fun createPaymentPayload(paymentId: String): Result<VnpayPaymentPayload> = withContext(Dispatchers.IO) {
-        try {
+        requestWithFallback { baseUrl -> createPaymentPayload(baseUrl, paymentId) }
+    }
+
+    private fun cancelPayment(baseUrl: String, paymentId: String): Result<Unit> {
+        return try {
+            val encodedPaymentId = URLEncoder.encode(paymentId, Charsets.UTF_8.name())
+            val url = URL("${baseUrl.trimEnd('/')}/api/payments/vnpay/cancel?paymentId=$encodedPaymentId")
+            val connection = (url.openConnection() as HttpURLConnection).apply {
+                requestMethod = "POST"
+                connectTimeout = 15_000
+                readTimeout = 15_000
+                doOutput = true
+            }
+
+            OutputStreamWriter(connection.outputStream).use { it.write("") }
+
+            val responseCode = connection.responseCode
+            val responseText = if (responseCode in 200..299) {
+                connection.inputStream.bufferedReader().use { it.readText() }
+            } else {
+                connection.errorStream?.bufferedReader()?.use { it.readText() }.orEmpty()
+            }
+
+            if (responseCode !in 200..299) {
+                return Result.failure(IllegalStateException(readErrorMessage(responseText)))
+            }
+
+            val json = JSONObject(responseText)
+            if (json.optString("code") == "00") {
+                Result.success(Unit)
+            } else {
+                Result.failure(IllegalStateException(json.optString("message", "Kh\u00f4ng th\u1ec3 h\u1ee7y thanh to\u00e1n")))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    private fun createPaymentPayload(baseUrl: String, paymentId: String): Result<VnpayPaymentPayload> {
+        return try {
             val encodedPaymentId = URLEncoder.encode(paymentId, Charsets.UTF_8.name())
             val url = URL("${baseUrl.trimEnd('/')}/api/payments/vnpay/create?paymentId=$encodedPaymentId")
             val connection = (url.openConnection() as HttpURLConnection).apply {
@@ -47,7 +90,7 @@ class VnpayRepository(
             }
 
             if (responseCode !in 200..299) {
-                return@withContext Result.failure(IllegalStateException(readErrorMessage(responseText)))
+                return Result.failure(IllegalStateException(readErrorMessage(responseText)))
             }
 
             val json = JSONObject(responseText)
@@ -72,6 +115,21 @@ class VnpayRepository(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    private fun <T> requestWithFallback(request: (String) -> Result<T>): Result<T> {
+        var lastFailure: Throwable? = null
+        baseUrls.forEachIndexed { index, baseUrl ->
+            val result = request(baseUrl)
+            if (result.isSuccess) return result
+
+            val failure = result.exceptionOrNull()
+            lastFailure = failure
+            if (failure !is IOException || index == baseUrls.lastIndex) {
+                return result
+            }
+        }
+        return Result.failure(lastFailure ?: IllegalStateException("Kh\u00f4ng th\u1ec3 k\u1ebft n\u1ed1i admin-web"))
     }
 
     private fun readErrorMessage(responseText: String): String {

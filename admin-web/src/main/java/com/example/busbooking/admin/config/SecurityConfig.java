@@ -20,11 +20,14 @@ public class SecurityConfig {
         return http
                 .authenticationProvider(authenticationProvider)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/login", "/error", "/css/**", "/js/**", "/api/payments/vnpay/**").permitAll()
+                        .requestMatchers("/", "/login", "/error", "/css/**", "/js/**", "/api/payments/vnpay/**", "/api/test-data/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .csrf(csrf -> csrf
-                        .ignoringRequestMatchers(new AntPathRequestMatcher("/api/payments/vnpay/**"))
+                        .ignoringRequestMatchers(
+                                new AntPathRequestMatcher("/api/payments/vnpay/**"),
+                                new AntPathRequestMatcher("/api/test-data/**")
+                        )
                 )
                 .formLogin(form -> form
                         .loginPage("/login")

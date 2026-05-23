@@ -36,6 +36,8 @@ import com.example.busbooking.domain.repository.FirebaseSeatRepository
 import com.example.busbooking.domain.repository.RouteRepository
 import com.example.busbooking.domain.repository.SeatRepository
 import com.example.busbooking.domain.repository.TicketRepository
+import com.example.busbooking.data.relations.isTicketHistory
+import com.example.busbooking.data.relations.isUpcomingTicket
 import com.example.busbooking.presentation.adapter.SeatAdapter
 import com.example.busbooking.presentation.adapter.TicketAdapter
 import com.example.busbooking.presentation.ui.state.BookingState
@@ -48,6 +50,7 @@ import com.example.busbooking.presentation.viewmodel.UserProfileViewModel
 import com.example.busbooking.presentation.viewmodel.UserViewModel
 import com.example.busbooking.presentation.viewmodel.ViewModelFactory
 import com.example.busbooking.utils.SessionManager
+import com.google.android.material.tabs.TabLayout
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -100,10 +103,14 @@ internal abstract class BaseTicketListFragment : Fragment() {
             }
         }
 
-        viewModel.loadMyTickets()
+        loadTickets()
     }
 
     abstract fun onTicketsLoaded(state: UserState.TicketsLoaded)
+
+    protected open fun loadTickets() {
+        viewModel.loadMyTickets()
+    }
 
     private fun showLoading() {
         progressBar.visibility  = View.VISIBLE
@@ -142,25 +149,61 @@ internal class MyTicketsFragment : BaseTicketListFragment() {
 
     override val layoutResId    = R.layout.fragment_my_tickets
     override val recyclerViewId = R.id.ticketsRecyclerView
+    private var showingHistory = false
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        view.findViewById<TabLayout>(R.id.tabLayout).addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab) {
+                showingHistory = tab.position == 1
+                loadTickets()
+            }
+
+            override fun onTabUnselected(tab: TabLayout.Tab) = Unit
+            override fun onTabReselected(tab: TabLayout.Tab) = loadTickets()
+        })
+    }
+
+    override fun loadTickets() {
+        if (showingHistory) {
+            viewModel.loadTicketHistory()
+        } else {
+            viewModel.loadMyTickets()
+        }
+    }
 
     override fun onTicketsLoaded(state: UserState.TicketsLoaded) {
-        val upcoming = state.tickets.filter {
-            it.ticket.status == "CONFIRMED"
-                    || it.ticket.status == "PENDING"
-                    || it.ticket.status == "PENDING_PAYMENT"
+        val tickets = if (showingHistory) {
+            state.tickets.filter { it.isTicketHistory() }
+        } else {
+            state.tickets.filter { it.isUpcomingTicket() }
         }
-        if (upcoming.isEmpty()) {
+        if (tickets.isEmpty()) {
             showEmpty()
-            emptyText.text = "B\u1ea1n ch\u01b0a c\u00f3 v\u00e9 n\u00e0o s\u1eafp t\u1edbi"
+            emptyText.text = if (showingHistory) {
+                "B\u1ea1n ch\u01b0a c\u00f3 l\u1ecbch s\u1eed \u0111\u1eb7t v\u00e9 n\u00e0o"
+            } else {
+                "B\u1ea1n ch\u01b0a c\u00f3 v\u00e9 n\u00e0o s\u1eafp t\u1edbi"
+            }
         } else {
             showList()
             val adapter = TicketAdapter { ticket ->
-                val bundle = Bundle().apply { putLong("ticketId", ticket.ticket.id) }
-                findNavController().navigate(
-                    R.id.action_myTicketsFragment_to_ticketDetailsFragment, bundle)
+                val bundle = Bundle().apply {
+                    putLong("ticketId", ticket.ticket.id)
+                    putBoolean(
+                        "resumePayment",
+                        !showingHistory && ticket.ticket.status in setOf("PENDING", "PENDING_PAYMENT")
+                    )
+                }
+                val actionId = if (!showingHistory && ticket.ticket.status in setOf("PENDING", "PENDING_PAYMENT")) {
+                    R.id.action_myTicketsFragment_to_bookingConfirmationFragment
+                } else {
+                    R.id.action_myTicketsFragment_to_ticketDetailsFragment
+                }
+                findNavController().navigate(actionId, bundle)
             }
             recyclerView.adapter = adapter
-            adapter.submitList(upcoming)
+            adapter.submitList(tickets)
         }
     }
 }
@@ -173,8 +216,14 @@ internal class BookingHistoryFragment : BaseTicketListFragment() {
     override val layoutResId    = R.layout.fragment_booking_history
     override val recyclerViewId = R.id.historyRecyclerView
 
+    override fun loadTickets() {
+        viewModel.loadTicketHistory()
+    }
+
     override fun onTicketsLoaded(state: UserState.TicketsLoaded) {
-        val allTickets = state.tickets.sortedByDescending { it.ticket.bookingTime }
+        val allTickets = state.tickets
+            .filter { it.isTicketHistory() }
+            .sortedByDescending { it.ticket.bookingTime }
         if (allTickets.isEmpty()) {
             showEmpty()
             emptyText.text = "B\u1ea1n ch\u01b0a c\u00f3 l\u1ecbch s\u1eed \u0111\u1eb7t v\u00e9 n\u00e0o"
@@ -182,8 +231,7 @@ internal class BookingHistoryFragment : BaseTicketListFragment() {
             showList()
             val adapter = TicketAdapter { ticket ->
                 val bundle = Bundle().apply { putLong("ticketId", ticket.ticket.id) }
-                findNavController().navigate(
-                    R.id.action_myTicketsFragment_to_ticketDetailsFragment, bundle)
+                findNavController().navigate(R.id.ticketDetailsFragment, bundle)
             }
             recyclerView.adapter = adapter
             adapter.submitList(allTickets)
@@ -213,11 +261,19 @@ class TicketDetailsFragment : Fragment() {
 
     private lateinit var progressBar: ProgressBar
     private lateinit var errorText: TextView
-    private lateinit var routeText: TextView
-    private lateinit var dateText: TextView
+    private lateinit var originCityText: TextView
+    private lateinit var originStationText: TextView
+    private lateinit var destinationCityText: TextView
+    private lateinit var destinationStationText: TextView
+    private lateinit var ticketIdText: TextView
+    private lateinit var pickupTimeText: TextView
+    private lateinit var pickupDateText: TextView
+    private lateinit var quantityText: TextView
     private lateinit var seatText: TextView
     private lateinit var statusText: TextView
     private lateinit var priceText: TextView
+    private lateinit var pickupPointText: TextView
+    private lateinit var dropoffPointText: TextView
     private lateinit var cancelButton: Button
 
     override fun onCreateView(
@@ -236,11 +292,19 @@ class TicketDetailsFragment : Fragment() {
 
         progressBar  = view.findViewById(R.id.progressBar)
         errorText    = view.findViewById(R.id.errorText)
-        routeText    = view.findViewById(R.id.routeText)
-        dateText     = view.findViewById(R.id.dateText)
+        originCityText = view.findViewById(R.id.originCityText)
+        originStationText = view.findViewById(R.id.originStationText)
+        destinationCityText = view.findViewById(R.id.destinationCityText)
+        destinationStationText = view.findViewById(R.id.destinationStationText)
+        ticketIdText = view.findViewById(R.id.ticketIdText)
+        pickupTimeText = view.findViewById(R.id.pickupTimeText)
+        pickupDateText = view.findViewById(R.id.pickupDateText)
+        quantityText = view.findViewById(R.id.quantityText)
         seatText     = view.findViewById(R.id.seatText)
         statusText   = view.findViewById(R.id.statusText)
         priceText    = view.findViewById(R.id.priceText)
+        pickupPointText = view.findViewById(R.id.pickupPointText)
+        dropoffPointText = view.findViewById(R.id.dropoffPointText)
         cancelButton = view.findViewById(R.id.cancelButton)
 
         cancelButton.setOnClickListener { showCancelDialog() }
@@ -280,13 +344,22 @@ class TicketDetailsFragment : Fragment() {
         val route   = details.tripWithRouteAndBus.route     // Route
         val seat    = details.seat                          // Seat
 
+        val timeFmt = SimpleDateFormat("HH:mm", Locale.getDefault())
         val dateFmt = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
 
-        routeText.text  = "${route.origin} \u2192 ${route.destination}"
-        dateText.text   = dateFmt.format(Date(trip.tripDate))
-        seatText.text   = "Gh\u1ebf: ${seat.seatNumber}"
-        statusText.text = "Tr\u1ea1ng th\u00e1i: ${displayTicketStatus(ticket.status)}"
-        priceText.text  = "Gi\u00e1: ${String.format("%,.0f", trip.price)} VN\u0110"
+        originCityText.text = route.origin
+        originStationText.text = ""
+        destinationCityText.text = route.destination
+        destinationStationText.text = ""
+        ticketIdText.text = "#${ticket.id}"
+        statusText.text = displayTicketStatus(ticket.status)
+        priceText.text = "${String.format("%,.0f", trip.price)} VN\u0110"
+        pickupTimeText.text = timeFmt.format(Date(trip.departureTime))
+        pickupDateText.text = dateFmt.format(Date(trip.tripDate))
+        quantityText.text = "1 v\u00e9"
+        seatText.text = seat.seatNumber
+        pickupPointText.text = route.origin
+        dropoffPointText.text = route.destination
 
         val cancellable = ticket.status == "CONFIRMED" || ticket.status == "PENDING"
         cancelButton.isEnabled  = cancellable
@@ -656,12 +729,13 @@ class BookingConfirmationFragment : Fragment() {
         val qrCodeImage         = view.findViewById<ImageView>(R.id.qrCodeImage)
         val qrStatusText        = view.findViewById<TextView>(R.id.qrStatusText)
         val payButton           = view.findViewById<Button>(R.id.payButton)
+        val cancelPaymentButton = view.findViewById<Button>(R.id.cancelPaymentButton)
         val viewTicketsButton   = view.findViewById<Button>(R.id.viewTicketsButton)
 
         val timeFmt = SimpleDateFormat("HH:mm", Locale.getDefault())
         val dateFmt = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
         val paymentId = arguments?.getString("paymentId").orEmpty()
-        val paymentUrl = arguments?.getString("paymentUrl").orEmpty()
+        var activePaymentUrl = arguments?.getString("paymentUrl").orEmpty()
         val qrImageBase64 = arguments?.getString("qrImageBase64").orEmpty()
         val paymentError = arguments?.getString("paymentError").orEmpty()
         val seatNumbers = arguments?.getStringArrayList("seatNumbers").orEmpty()
@@ -670,8 +744,10 @@ class BookingConfirmationFragment : Fragment() {
         val destination = arguments?.getString("destination").orEmpty()
         val tripDate = arguments?.getLong("tripDate", 0L) ?: 0L
         val departureTime = arguments?.getLong("departureTime", 0L) ?: 0L
-        val hasCheckout = seatNumbers.isNotEmpty() || paymentUrl.isNotBlank() || paymentId.isNotBlank()
+        val resumePayment = arguments?.getBoolean("resumePayment", false) ?: false
+        val hasCheckout = seatNumbers.isNotEmpty() || activePaymentUrl.isNotBlank() || paymentId.isNotBlank()
         reloadPaymentStatusOnResume = hasCheckout
+        var requestedResumePayment = false
 
         if (hasCheckout) {
             originCityText.text = origin.ifBlank { "\u0110i\u1ec3m \u0111i" }
@@ -689,11 +765,13 @@ class BookingConfirmationFragment : Fragment() {
             dropoffPointText.text = destination.ifBlank { "Theo th\u00f4ng tin chuy\u1ebfn xe" }
             totalPriceText.text = "${String.format("%,.0f", totalPrice)} VN\u0110"
             paymentMethodText.text = "VNPAY"
-            bindVnpayQr(paymentUrl, qrImageBase64, paymentError, qrCard, qrCodeImage, qrStatusText, payButton)
+            bindVnpayQr(activePaymentUrl, qrImageBase64, paymentError, qrCard, qrCodeImage, qrStatusText, payButton)
             payButton.visibility = View.VISIBLE
+            cancelPaymentButton.visibility = View.VISIBLE
         } else {
             qrCard.visibility = View.GONE
             payButton.visibility = View.GONE
+            cancelPaymentButton.visibility = View.GONE
         }
 
         viewModel.ticket.observe(viewLifecycleOwner) { details ->
@@ -702,7 +780,7 @@ class BookingConfirmationFragment : Fragment() {
             val ticket = details.ticket
             if (hasCheckout) {
                 statusText.text = displayConfirmationStatus(ticket.status)
-                updateCheckoutPaymentUi(ticket.status, qrStatusText, payButton)
+                updateCheckoutPaymentUi(ticket.status, qrStatusText, payButton, cancelPaymentButton)
                 return@observe
             }
 
@@ -727,23 +805,79 @@ class BookingConfirmationFragment : Fragment() {
             dropoffPointText.text = route.destination
             totalPriceText.text   = "${String.format("%,.0f", trip.price)} VN\u0110"
             paymentMethodText.text = "VNPAY"
+
+            if (resumePayment && isPendingPaymentStatus(ticket.status)) {
+                reloadPaymentStatusOnResume = true
+                qrCard.visibility = View.VISIBLE
+                qrCodeImage.visibility = View.GONE
+                qrStatusText.text = "\u0110ang t\u1ea1o l\u1ea1i m\u00e3 QR VNPAY..."
+                payButton.visibility = View.VISIBLE
+                payButton.isEnabled = false
+                payButton.alpha = 0.55f
+                payButton.text = "\u0110ang t\u1ea1o QR..."
+                cancelPaymentButton.visibility = View.VISIBLE
+                if (!requestedResumePayment) {
+                    requestedResumePayment = true
+                    viewModel.loadPendingPayment(ticketId)
+                }
+            } else {
+                qrCard.visibility = View.GONE
+                payButton.visibility = View.GONE
+                cancelPaymentButton.visibility = View.GONE
+            }
         }
 
         payButton.setOnClickListener {
-            if (paymentUrl.isBlank()) {
+            if (activePaymentUrl.isBlank()) {
                 Toast.makeText(requireContext(), "Chưa có link thanh toán VNPAY", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(paymentUrl)))
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(activePaymentUrl)))
+        }
+
+        cancelPaymentButton.setOnClickListener {
+            AlertDialog.Builder(requireContext())
+                .setTitle("H\u1ee7y thanh to\u00e1n")
+                .setMessage("B\u1ea1n c\u00f3 ch\u1eafc mu\u1ed1n h\u1ee7y v\u00e9 \u0111ang ch\u1edd thanh to\u00e1n n\u00e0y kh\u00f4ng?")
+                .setPositiveButton("H\u1ee7y") { _, _ -> viewModel.cancelPendingPayment(ticketId) }
+                .setNegativeButton("Kh\u00f4ng", null)
+                .show()
         }
 
         viewTicketsButton.setOnClickListener {
             findNavController().navigate(R.id.action_bookingConfirmationFragment_to_myTicketsFragment)
         }
 
+        viewModel.paymentPayload.observe(viewLifecycleOwner) { payload ->
+            payload ?: return@observe
+            activePaymentUrl = payload.paymentUrl
+            bindVnpayQr(
+                payload.paymentUrl,
+                payload.qrImageBase64,
+                "",
+                qrCard,
+                qrCodeImage,
+                qrStatusText,
+                payButton
+            )
+            payButton.visibility = View.VISIBLE
+            cancelPaymentButton.visibility = View.VISIBLE
+        }
+
+        viewModel.cancelSuccess.observe(viewLifecycleOwner) { success ->
+            if (success == true) {
+                Toast.makeText(requireContext(), "\u0110\u00e3 h\u1ee7y thanh to\u00e1n", Toast.LENGTH_SHORT).show()
+                findNavController().navigate(R.id.action_bookingConfirmationFragment_to_myTicketsFragment)
+            }
+        }
+
         viewModel.error.observe(viewLifecycleOwner) { message ->
-            if (!message.isNullOrBlank() && !hasCheckout) {
+            if (!message.isNullOrBlank()) {
+                qrStatusText.text = message
+                payButton.isEnabled = false
+                payButton.alpha = 0.55f
                 Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+                viewModel.clearError()
             }
         }
 
@@ -783,20 +917,24 @@ class BookingConfirmationFragment : Fragment() {
     private fun updateCheckoutPaymentUi(
         status: String,
         qrStatusText: TextView,
-        payButton: Button
+        payButton: Button,
+        cancelPaymentButton: Button
     ) {
         when (status) {
             "CONFIRMED" -> {
                 qrStatusText.text = "Thanh toán thành công. Vé đã được xác nhận."
                 payButton.visibility = View.GONE
+                cancelPaymentButton.visibility = View.GONE
             }
             "PAYMENT_FAILED", "CANCELLED" -> {
                 qrStatusText.text = "Thanh toán không thành công. Vui lòng đặt lại vé nếu cần."
                 payButton.isEnabled = false
                 payButton.alpha = 0.55f
+                cancelPaymentButton.visibility = View.GONE
             }
             else -> {
                 qrStatusText.text = "Đang chờ kết quả thanh toán VNPAY. Quay lại màn hình này để tự động cập nhật."
+                cancelPaymentButton.visibility = View.VISIBLE
             }
         }
     }
@@ -807,6 +945,10 @@ class BookingConfirmationFragment : Fragment() {
         "PAYMENT_FAILED" -> "Thanh to\u00e1n th\u1ea5t b\u1ea1i"
         "CANCELLED" -> "\u0110\u00e3 h\u1ee7y"
         else -> status
+    }
+
+    private fun isPendingPaymentStatus(status: String): Boolean {
+        return status == "PENDING" || status == "PENDING_PAYMENT"
     }
 
     private fun decodeQrBitmap(qrImageBase64: String) = runCatching {
