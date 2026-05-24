@@ -11,6 +11,17 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
+data class SeatReservationSeat(
+    val id: Long,
+    val seatNumber: String
+)
+
+data class SeatReservationSegment(
+    val tripId: Long,
+    val seats: List<SeatReservationSeat>,
+    val amountPerSeat: Double
+)
+
 class FirebaseSeatRepository(
     private val authProvider: () -> FirebaseAuth = { FirebaseAuth.getInstance() },
     private val firestoreProvider: () -> FirebaseFirestore = { FirebaseFirestore.getInstance() }
@@ -162,6 +173,119 @@ class FirebaseSeatRepository(
             SeatReservationResult.AlreadyTaken(e.seatNumber)
         } catch (e: Exception) {
             SeatReservationResult.Failure(e.message ?: "Không thể tạo yêu cầu thanh toán trên Firebase")
+        }
+    }
+
+    suspend fun reserveSeatSegments(
+        userId: Long,
+        segments: List<SeatReservationSegment>
+    ): SeatReservationResult = withContext(Dispatchers.IO) {
+        val validSegments = segments.filter { it.seats.isNotEmpty() }
+        if (validSegments.isEmpty()) {
+            return@withContext SeatReservationResult.Failure("Vui long chon ghe truoc khi tiep tuc")
+        }
+
+        val userUid = runCatching { auth.currentUser?.uid }.getOrNull() ?: "demo-user"
+
+        try {
+            val tripDocumentIds = validSegments.associate { segment ->
+                segment.tripId to (findTripDocumentId(segment.tripId)
+                    ?: return@withContext SeatReservationResult.Failure("Chuyen xe khong hop le"))
+            }
+
+            firestore.runTransaction { transaction ->
+                val now = System.currentTimeMillis()
+                val paymentRef = payments.document()
+                val paymentId = paymentRef.id
+                val ticketIds = mutableListOf<Long>()
+                val ticketDocumentIds = mutableListOf<String>()
+                val allSeatIds = mutableListOf<Long>()
+                val tripIds = validSegments.map { it.tripId }
+                var firstBusId = 0L
+                var bookingIndex = 0
+
+                val segmentSnapshots = validSegments.map { segment ->
+                    val tripDocumentId = tripDocumentIds.getValue(segment.tripId)
+                    val tripSnapshot = transaction.get(trips.document(tripDocumentId))
+                    val tripSeatSnapshots = segment.seats.map { seat ->
+                        val ref = tripSeats.document("${segment.tripId}_${seat.id}")
+                        Triple(seat, ref, transaction.get(ref))
+                    }
+
+                    Triple(segment, tripSnapshot, tripSeatSnapshots)
+                }
+
+                segmentSnapshots.forEach { (segment, tripSnapshot, tripSeatSnapshots) ->
+                    if (!tripSnapshot.exists()) {
+                        throw IllegalStateException("Chuyen xe khong hop le")
+                    }
+                    if (tripSnapshot.getString("status") != "SCHEDULED") {
+                        throw IllegalStateException("Chuyen xe khong con mo dat ve")
+                    }
+
+                    tripSeatSnapshots.forEach { (seat, _, snapshot) ->
+                        if (isSeatTaken(snapshot.getString("status"))) {
+                            throw SeatTakenException(seat.seatNumber)
+                        }
+                    }
+                }
+
+                segmentSnapshots.forEach { (segment, tripSnapshot, tripSeatSnapshots) ->
+                    val busId = numberAsLong(tripSnapshot.get("busId")) ?: 0L
+                    if (firstBusId == 0L) firstBusId = busId
+
+                    tripSeatSnapshots.forEach { (seat, _, _) ->
+                        val ticketRef = tickets.document()
+                        val ticketId = ticketRef.id.toStableLongId()
+                        ticketIds += ticketId
+                        ticketDocumentIds += ticketRef.id
+                        allSeatIds += seat.id
+
+                        transaction.set(ticketRef, mapOf(
+                            "id" to ticketId,
+                            "userId" to userUid,
+                            "userNumericId" to userId,
+                            "tripId" to segment.tripId,
+                            "seatId" to seat.id,
+                            "busId" to busId,
+                            "paymentId" to paymentId,
+                            "bookingTime" to now + bookingIndex,
+                            "status" to "PENDING_PAYMENT",
+                            "cancellationReason" to "",
+                            "refundAmount" to 0.0,
+                            "refundStatus" to "NONE",
+                            "createdAt" to now
+                        ))
+                        bookingIndex += 1
+                    }
+                }
+
+                transaction.set(paymentRef, mapOf(
+                    "id" to paymentRef.id.toStableLongId(),
+                    "ticketId" to ticketDocumentIds.firstOrNull().orEmpty(),
+                    "ticketIds" to ticketIds,
+                    "ticketDocumentIds" to ticketDocumentIds,
+                    "tripSeatIds" to emptyList<String>(),
+                    "userId" to userUid,
+                    "userNumericId" to userId,
+                    "tripId" to validSegments.first().tripId,
+                    "tripIds" to tripIds,
+                    "seatId" to (allSeatIds.firstOrNull() ?: 0L),
+                    "seatIds" to allSeatIds,
+                    "busId" to firstBusId,
+                    "amount" to validSegments.sumOf { it.amountPerSeat * it.seats.size },
+                    "provider" to "VNPAY",
+                    "status" to "CREATED",
+                    "createdAt" to now,
+                    "updatedAt" to now
+                ))
+
+                SeatReservationResult.Success(ticketIds, paymentId)
+            }.await()
+        } catch (e: SeatTakenException) {
+            SeatReservationResult.AlreadyTaken(e.seatNumber)
+        } catch (e: Exception) {
+            SeatReservationResult.Failure(e.message ?: "Khong the tao yeu cau thanh toan tren Firebase")
         }
     }
 

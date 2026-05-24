@@ -33,6 +33,22 @@ import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
 
+private fun Bundle.copyRoundTripArgsFrom(source: Bundle?) {
+    source ?: return
+    putBoolean("isRoundTrip", source.getBoolean("isRoundTrip", false))
+    putBoolean("isReturnLeg", source.getBoolean("isReturnLeg", false))
+    putLong("returnDate", source.getLong("returnDate", 0L))
+    putLong("outboundTripId", source.getLong("outboundTripId", -1L))
+    putDouble("outboundTripPrice", source.getDouble("outboundTripPrice", 0.0))
+    putLong("outboundTripDate", source.getLong("outboundTripDate", 0L))
+    putLong("outboundDepartureTime", source.getLong("outboundDepartureTime", 0L))
+    putString("outboundOrigin", source.getString("outboundOrigin").orEmpty())
+    putString("outboundDestination", source.getString("outboundDestination").orEmpty())
+    source.getLongArray("outboundSeatIds")?.let { putLongArray("outboundSeatIds", it) }
+    source.getStringArrayList("outboundSeatNumbers")
+        ?.let { putStringArrayList("outboundSeatNumbers", it) }
+}
+
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // 1. TripListFragment
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -80,7 +96,10 @@ class TripListFragment : Fragment() {
         nextDayButton   = view.findViewById(R.id.nextDayButton)
 
         adapter = TripAdapter { trip ->
-            val bundle = Bundle().apply { putLong("tripId", trip.trip.id) }
+            val bundle = Bundle().apply {
+                putLong("tripId", trip.trip.id)
+                copyRoundTripArgsFrom(arguments)
+            }
             findNavController().navigate(
                 R.id.action_tripListFragment_to_tripDetailsFragment, bundle
             )
@@ -227,6 +246,7 @@ class TripDetailsFragment : Fragment() {
                     putString("destination", currentTrip.route.destination)
                     putLong("tripDate", currentTrip.trip.tripDate)
                     putLong("departureTime", currentTrip.trip.departureTime)
+                    copyRoundTripArgsFrom(arguments)
                 }
                 findNavController().navigate(
                     R.id.action_tripDetailsFragment_to_seatSelectionFragment,
@@ -284,6 +304,17 @@ class SeatSelectionFragment : Fragment() {
     private var destination: String = ""
     private var tripDate: Long = 0L
     private var departureTime: Long = 0L
+    private var isRoundTrip: Boolean = false
+    private var isReturnLeg: Boolean = false
+    private var returnDate: Long = 0L
+    private var outboundTripId: Long = -1L
+    private var outboundTripPrice: Double = 0.0
+    private var outboundTripDate: Long = 0L
+    private var outboundDepartureTime: Long = 0L
+    private var outboundOrigin: String = ""
+    private var outboundDestination: String = ""
+    private var outboundSeatIds: List<Long> = emptyList()
+    private var outboundSeatNumbers: List<String> = emptyList()
 
     // â”€â”€ Lifecycle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -302,6 +333,17 @@ class SeatSelectionFragment : Fragment() {
         destination = arguments?.getString("destination").orEmpty()
         tripDate = arguments?.getLong("tripDate") ?: 0L
         departureTime = arguments?.getLong("departureTime") ?: 0L
+        isRoundTrip = arguments?.getBoolean("isRoundTrip", false) ?: false
+        isReturnLeg = arguments?.getBoolean("isReturnLeg", false) ?: false
+        returnDate = arguments?.getLong("returnDate") ?: 0L
+        outboundTripId = arguments?.getLong("outboundTripId") ?: -1L
+        outboundTripPrice = arguments?.getDouble("outboundTripPrice") ?: 0.0
+        outboundTripDate = arguments?.getLong("outboundTripDate") ?: 0L
+        outboundDepartureTime = arguments?.getLong("outboundDepartureTime") ?: 0L
+        outboundOrigin = arguments?.getString("outboundOrigin").orEmpty()
+        outboundDestination = arguments?.getString("outboundDestination").orEmpty()
+        outboundSeatIds = arguments?.getLongArray("outboundSeatIds")?.toList().orEmpty()
+        outboundSeatNumbers = arguments?.getStringArrayList("outboundSeatNumbers").orEmpty()
 
         if (tripId == -1L) {
             Toast.makeText(requireContext(), "Chuyến xe không hợp lệ", Toast.LENGTH_SHORT).show()
@@ -311,6 +353,13 @@ class SeatSelectionFragment : Fragment() {
 
         bindViews(view)
         confirmButtonDefaultText = confirmButton.text
+        if (isRoundTrip && !isReturnLeg) {
+            confirmButtonDefaultText = "CH\u1eccN CHUY\u1ebeN V\u1ec0"
+            confirmButton.text = confirmButtonDefaultText
+        } else if (isRoundTrip && isReturnLeg) {
+            confirmButtonDefaultText = "X\u00c1C NH\u1eacN KH\u1ee8 H\u1ed2I"
+            confirmButton.text = confirmButtonDefaultText
+        }
         confirmButton.isEnabled = false
         confirmButton.alpha = 0.55f
         setupRecyclerViews()
@@ -326,11 +375,53 @@ class SeatSelectionFragment : Fragment() {
             findNavController().popBackStack(R.id.nav_home, false)
         }
         confirmButton.setOnClickListener {
-            viewModel.bookSeats(tripId)
+            if (isRoundTrip && !isReturnLeg) {
+                navigateToReturnTrips()
+            } else if (isRoundTrip && isReturnLeg) {
+                viewModel.bookRoundTripSeats(
+                    outboundTripId = outboundTripId,
+                    outboundSeatIds = outboundSeatIds,
+                    outboundSeatNumbers = outboundSeatNumbers,
+                    outboundPrice = outboundTripPrice,
+                    returnTripId = tripId
+                )
+            } else {
+                viewModel.bookSeats(tripId)
+            }
         }
     }
 
     // â”€â”€ Bind views â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+    private fun navigateToReturnTrips() {
+        val selectedSeats = viewModel.selectedSeats.value.orEmpty()
+        if (selectedSeats.isEmpty()) {
+            Toast.makeText(requireContext(), "Vui l\u00f2ng ch\u1ecdn gh\u1ebf tr\u01b0\u1edbc khi ti\u1ebfp t\u1ee5c", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (returnDate <= 0L) {
+            Toast.makeText(requireContext(), "Thi\u1ebfu ng\u00e0y v\u1ec1 cho v\u00e9 kh\u1ee9 h\u1ed3i", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val bundle = Bundle().apply {
+            putString("origin", destination)
+            putString("destination", origin)
+            putLong("tripDate", returnDate)
+            putBoolean("isRoundTrip", true)
+            putBoolean("isReturnLeg", true)
+            putLong("returnDate", returnDate)
+            putLong("outboundTripId", tripId)
+            putDouble("outboundTripPrice", tripPrice)
+            putLong("outboundTripDate", tripDate)
+            putLong("outboundDepartureTime", departureTime)
+            putString("outboundOrigin", origin)
+            putString("outboundDestination", destination)
+            putLongArray("outboundSeatIds", selectedSeats.map { it.id }.toLongArray())
+            putStringArrayList("outboundSeatNumbers", ArrayList(selectedSeats.map { it.seatNumber }))
+        }
+        findNavController().navigate(R.id.tripListFragment, bundle)
+    }
 
     private fun bindViews(view: View) {
         seatsFloor1RecyclerView = view.findViewById(R.id.seatsFloor1RecyclerView)
@@ -429,10 +520,24 @@ class SeatSelectionFragment : Fragment() {
                     putString("qrMimeType", checkout.qrMimeType)
                     putLong("paymentExpiresAt", checkout.paymentExpiresAt ?: 0L)
                     putString("paymentError", checkout.paymentError)
-                    putString("origin", origin)
-                    putString("destination", destination)
-                    putLong("tripDate", tripDate)
-                    putLong("departureTime", departureTime)
+                    putBoolean("isRoundTrip", checkout.isRoundTrip)
+                    putStringArrayList("outboundSeatNumbers", ArrayList(checkout.outboundSeatNumbers))
+                    putStringArrayList("returnSeatNumbers", ArrayList(checkout.returnSeatNumbers))
+                    if (checkout.isRoundTrip) {
+                        putString("origin", outboundOrigin.ifBlank { destination })
+                        putString("destination", outboundDestination.ifBlank { origin })
+                        putLong("tripDate", outboundTripDate)
+                        putLong("departureTime", outboundDepartureTime)
+                        putString("returnOrigin", origin)
+                        putString("returnDestination", destination)
+                        putLong("returnTripDate", tripDate)
+                        putLong("returnDepartureTime", departureTime)
+                    } else {
+                        putString("origin", origin)
+                        putString("destination", destination)
+                        putLong("tripDate", tripDate)
+                        putLong("departureTime", departureTime)
+                    }
                 }
                 viewModel.clearCheckout()
                 findNavController().navigate(

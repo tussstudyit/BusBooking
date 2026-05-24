@@ -141,47 +141,64 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="16dp">
+                        android:layout_marginBottom="16dp"
+                        android:orientation="vertical">
 
                         <TextView
-                            android:layout_width="wrap_content"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:layout_marginBottom="8dp"
                             android:text="Hành trình:"
                             android:textColor="@color/blue_primary"
                             android:textSize="15sp"
-                            android:textStyle="bold"
-                            android:layout_marginEnd="12dp" />
+                            android:textStyle="bold" />
 
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/oneWayButton"
-                            android:layout_width="wrap_content"
-                            android:layout_height="36dp"
-                            android:text="Một chiều"
-                            android:textSize="13sp"
-                            app:icon="@drawable/ic_arrow_right"
-                            app:iconGravity="start"
-                            app:cornerRadius="20dp"
-                            app:backgroundTint="@color/background_white"
-                            android:textColor="@color/blue_primary"
-                            app:strokeColor="@color/divider_blue"
-                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                            android:layout_marginEnd="8dp" />
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
 
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/roundTripButton"
-                            android:layout_width="wrap_content"
-                            android:layout_height="36dp"
-                            android:text="Khứ hồi"
-                            android:textSize="13sp"
-                            app:icon="@drawable/ic_swap"
-                            app:iconGravity="start"
-                            app:cornerRadius="20dp"
-                            app:backgroundTint="@android:color/transparent"
-                            android:textColor="@color/text_primary"
-                            style="@style/Widget.MaterialComponents.Button.TextButton" />
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/oneWayButton"
+                                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                                android:layout_width="0dp"
+                                android:layout_height="40dp"
+                                android:layout_marginEnd="8dp"
+                                android:layout_weight="1"
+                                android:ellipsize="none"
+                                android:insetLeft="0dp"
+                                android:insetRight="0dp"
+                                android:maxLines="1"
+                                android:minWidth="0dp"
+                                android:text="Một chiều"
+                                android:textColor="@color/blue_primary"
+                                android:textSize="13sp"
+                                app:backgroundTint="@color/background_white"
+                                app:cornerRadius="20dp"
+                                app:icon="@drawable/ic_arrow_right"
+                                app:iconGravity="start"
+                                app:strokeColor="@color/divider_blue" />
 
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/roundTripButton"
+                                style="@style/Widget.MaterialComponents.Button.TextButton"
+                                android:layout_width="0dp"
+                                android:layout_height="40dp"
+                                android:layout_weight="1"
+                                android:ellipsize="none"
+                                android:insetLeft="0dp"
+                                android:insetRight="0dp"
+                                android:maxLines="1"
+                                android:minWidth="0dp"
+                                android:text="Khứ hồi"
+                                android:textColor="@color/text_primary"
+                                android:textSize="13sp"
+                                app:backgroundTint="@android:color/transparent"
+                                app:cornerRadius="20dp"
+                                app:icon="@drawable/ic_swap"
+                                app:iconGravity="start" />
+                        </LinearLayout>
                     </LinearLayout>
 
                     <!-- Điểm đi -->
@@ -221,15 +238,15 @@
                     <!-- Swap button -->
                     <ImageButton
                         android:id="@+id/swapButton"
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
+                        android:layout_width="64dp"
+                        android:layout_height="32dp"
                         android:layout_gravity="end"
-                        android:layout_marginEnd="8dp"
-                        android:layout_marginTop="-4dp"
-                        android:layout_marginBottom="-4dp"
+                        android:layout_marginBottom="8dp"
+                        android:background="@drawable/bg_swap_pill"
+                        android:elevation="2dp"
+                        android:paddingStart="18dp"
+                        android:paddingEnd="18dp"
                         android:src="@drawable/ic_swap"
-                        android:background="@drawable/bg_circle_white"
-                        android:elevation="4dp"
                         android:contentDescription="Đổi chiều" />
 
                     <!-- Điểm đến -->

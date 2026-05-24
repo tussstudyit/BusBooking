@@ -28,8 +28,11 @@ class FirebaseTripRepository(
         tripDate: Long
     ): Result<List<TripWithRouteAndBus>> = withContext(Dispatchers.IO) {
         try {
+            val now = System.currentTimeMillis()
             val route = findRouteByOriginDestination(origin, destination)
-                ?: return@withContext Result.Success(DemoBookingData.tripsForDate(origin, destination, tripDate))
+                ?: return@withContext Result.Success(
+                    DemoBookingData.tripsForDate(origin, destination, tripDate).bookableDepartures(now)
+                )
 
             val dayStart = Calendar.getInstance().apply {
                 timeInMillis = tripDate
@@ -52,6 +55,7 @@ class FirebaseTripRepository(
                 }
 
             val hydrated = tripDocuments
+                .filter { (it.getLong("departureTime") ?: 0L) > now }
                 .mapNotNull { document ->
                     val trip = document.toTrip()
                     val bus = findBusById(trip.busId) ?: return@mapNotNull null
@@ -59,9 +63,16 @@ class FirebaseTripRepository(
                 }
                 .sortedBy { it.trip.departureTime }
 
-            Result.Success(hydrated.ifEmpty { DemoBookingData.tripsForDate(origin, destination, tripDate) })
+            Result.Success(
+                if (tripDocuments.isEmpty()) {
+                    DemoBookingData.tripsForDate(origin, destination, tripDate).bookableDepartures(now)
+                } else {
+                    hydrated
+                }
+            )
         } catch (e: Exception) {
-            Result.Success(DemoBookingData.tripsForDate(origin, destination, tripDate))
+            val now = System.currentTimeMillis()
+            Result.Success(DemoBookingData.tripsForDate(origin, destination, tripDate).bookableDepartures(now))
         }
     }
 
@@ -70,6 +81,7 @@ class FirebaseTripRepository(
         fromDate: Long
     ): Result<List<TripWithRouteAndBus>> = withContext(Dispatchers.IO) {
         try {
+            val now = System.currentTimeMillis()
             val route = findRouteById(routeId)
                 ?: return@withContext Result.Error(Exception("Not found"), "Route not found")
 
@@ -80,7 +92,8 @@ class FirebaseTripRepository(
                 .documents
                 .filter {
                     it.getString("status") == "SCHEDULED" &&
-                        (it.getLong("tripDate") ?: 0L) >= fromDate
+                        (it.getLong("tripDate") ?: 0L) >= fromDate &&
+                        (it.getLong("departureTime") ?: 0L) > now
                 }
                 .mapNotNull { document ->
                     val trip = document.toTrip()
@@ -314,5 +327,10 @@ class FirebaseTripRepository(
     private fun String.toStableLongId(): Long {
         return fold(1125899906842597L) { hash, char -> 31 * hash + char.code }
             .let { if (it == Long.MIN_VALUE) 0L else kotlin.math.abs(it) }
+    }
+
+    private fun List<TripWithRouteAndBus>.bookableDepartures(now: Long): List<TripWithRouteAndBus> {
+        return filter { it.trip.status == "SCHEDULED" && it.trip.departureTime > now }
+            .sortedBy { it.trip.departureTime }
     }
 }

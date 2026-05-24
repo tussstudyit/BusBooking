@@ -40,8 +40,8 @@ class VnpayRepository(
             val url = URL("${baseUrl.trimEnd('/')}/api/payments/vnpay/cancel?paymentId=$encodedPaymentId")
             val connection = (url.openConnection() as HttpURLConnection).apply {
                 requestMethod = "POST"
-                connectTimeout = 15_000
-                readTimeout = 15_000
+                connectTimeout = CONNECT_TIMEOUT_MS
+                readTimeout = READ_TIMEOUT_MS
                 doOutput = true
             }
 
@@ -75,8 +75,8 @@ class VnpayRepository(
             val url = URL("${baseUrl.trimEnd('/')}/api/payments/vnpay/create?paymentId=$encodedPaymentId")
             val connection = (url.openConnection() as HttpURLConnection).apply {
                 requestMethod = "POST"
-                connectTimeout = 15_000
-                readTimeout = 15_000
+                connectTimeout = CONNECT_TIMEOUT_MS
+                readTimeout = READ_TIMEOUT_MS
                 doOutput = true
             }
 
@@ -142,5 +142,10 @@ class VnpayRepository(
                 .ifBlank { json.optString("error") }
                 .ifBlank { responseText }
         }.getOrElse { responseText }
+    }
+
+    private companion object {
+        private const val CONNECT_TIMEOUT_MS = 5_000
+        private const val READ_TIMEOUT_MS = 10_000
     }
 }

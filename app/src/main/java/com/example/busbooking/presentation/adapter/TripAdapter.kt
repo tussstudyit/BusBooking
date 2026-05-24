@@ -58,7 +58,10 @@ class TripAdapter(
             statusText.text = ".000 VNĐ"
 
             itemView.alpha = if (item.isBookingOpen) 1f else 0.62f
-            itemView.setOnClickListener { onItemClick(details) }
+            itemView.isEnabled = item.isBookingOpen
+            itemView.setOnClickListener {
+                if (item.isBookingOpen) onItemClick(details)
+            }
         }
     }
 

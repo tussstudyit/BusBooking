@@ -15,7 +15,9 @@ data class TripListItem(
     val seatAvailability: TripSeatAvailability
 ) {
     val isBookingOpen: Boolean
-        get() = tripDetails.trip.status == "SCHEDULED" && seatAvailability.availableSeats > 0
+        get() = tripDetails.trip.status == "SCHEDULED" &&
+            tripDetails.trip.departureTime > System.currentTimeMillis() &&
+            seatAvailability.availableSeats > 0
 }
 
 /**
@@ -48,7 +50,7 @@ class TripListViewModel(
         viewModelScope.launch {
             when (val result = tripRepository.searchTrips(origin, destination, tripDate)) {
                 is Result.Success -> {
-                    _trips.value = result.data.withSeatAvailability()
+                    _trips.value = result.data.bookableDepartures().withSeatAvailability()
                 }
                 is Result.Error -> {
                     _trips.value = emptyList()
@@ -93,5 +95,11 @@ class TripListViewModel(
             }
             TripListItem(trip, availability)
         }
+    }
+
+    private fun List<TripWithRouteAndBus>.bookableDepartures(): List<TripWithRouteAndBus> {
+        val now = System.currentTimeMillis()
+        return filter { it.trip.status == "SCHEDULED" && it.trip.departureTime > now }
+            .sortedBy { it.trip.departureTime }
     }
 }

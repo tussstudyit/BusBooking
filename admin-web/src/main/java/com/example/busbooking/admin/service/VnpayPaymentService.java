@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -210,6 +211,20 @@ public class VnpayPaymentService {
         }
     }
 
+    public int reconcileSuccessfulPayments() throws Exception {
+        int reconciled = 0;
+        for (DocumentSnapshot payment : firestore.collection("payments")
+                .whereEqualTo("status", "SUCCESS")
+                .get()
+                .get()
+                .getDocuments()) {
+            if (reconcilePaymentTickets(payment)) {
+                reconciled += 1;
+            }
+        }
+        return reconciled;
+    }
+
     public boolean verifySecureHash(Map<String, String> params) {
         String receivedHash = params.get("vnp_SecureHash");
         if (!StringUtils.hasText(receivedHash)) {
@@ -235,9 +250,31 @@ public class VnpayPaymentService {
         batch.update(paymentRef, callbackPaymentUpdates(params, "SUCCESS", now));
         String paymentId = payment.getId();
 
-        for (String ticketDocumentId : stringList(payment.get("ticketDocumentIds"))) {
-            DocumentReference ticketRef = firestore.collection("tickets").document(ticketDocumentId);
-            DocumentSnapshot ticket = ticketRef.get().get();
+        confirmTicketDocuments(batch, paymentTicketDocuments(payment), paymentId, now);
+        batch.commit().get();
+    }
+
+    private boolean reconcilePaymentTickets(DocumentSnapshot payment) throws Exception {
+        List<DocumentSnapshot> ticketDocuments = paymentTicketDocuments(payment);
+        if (ticketDocuments.isEmpty()) {
+            return false;
+        }
+
+        WriteBatch batch = firestore.batch();
+        confirmTicketDocuments(batch, ticketDocuments, payment.getId(), System.currentTimeMillis());
+        batch.commit().get();
+        return true;
+    }
+
+    private void confirmTicketDocuments(
+            WriteBatch batch,
+            List<DocumentSnapshot> ticketDocuments,
+            String paymentId,
+            long now
+    ) {
+        for (DocumentSnapshot ticket : ticketDocuments) {
+            DocumentReference ticketRef = ticket.getReference();
+            String ticketDocumentId = ticket.getId();
             batch.update(ticketRef, Map.of(
                     "status", "CONFIRMED",
                     "updatedAt", now
@@ -260,8 +297,6 @@ public class VnpayPaymentService {
                 batch.set(firestore.collection("tripSeats").document(tripId + "_" + seatId), tripSeat);
             }
         }
-
-        batch.commit().get();
     }
 
     private void failPayment(DocumentReference paymentRef, DocumentSnapshot payment, Map<String, String> params) throws Exception {
@@ -269,8 +304,8 @@ public class VnpayPaymentService {
         long now = System.currentTimeMillis();
         batch.update(paymentRef, callbackPaymentUpdates(params, "FAILED", now));
 
-        for (String ticketDocumentId : stringList(payment.get("ticketDocumentIds"))) {
-            batch.update(firestore.collection("tickets").document(ticketDocumentId), Map.of(
+        for (DocumentSnapshot ticket : paymentTicketDocuments(payment)) {
+            batch.update(ticket.getReference(), Map.of(
                     "status", "PAYMENT_FAILED",
                     "updatedAt", now
             ));
@@ -288,8 +323,8 @@ public class VnpayPaymentService {
                 "updatedAt", now
         ));
 
-        for (String ticketDocumentId : stringList(payment.get("ticketDocumentIds"))) {
-            batch.update(firestore.collection("tickets").document(ticketDocumentId), Map.of(
+        for (DocumentSnapshot ticket : paymentTicketDocuments(payment)) {
+            batch.update(ticket.getReference(), Map.of(
                     "status", "PAYMENT_FAILED",
                     "cancellationReason", "Phi\u00ean thanh to\u00e1n qu\u00e1 5 ph\u00fat",
                     "updatedAt", now
@@ -308,9 +343,8 @@ public class VnpayPaymentService {
                 "updatedAt", now
         ));
 
-        for (String ticketDocumentId : stringList(payment.get("ticketDocumentIds"))) {
-            DocumentReference ticketRef = firestore.collection("tickets").document(ticketDocumentId);
-            DocumentSnapshot ticket = ticketRef.get().get();
+        for (DocumentSnapshot ticket : paymentTicketDocuments(payment)) {
+            DocumentReference ticketRef = ticket.getReference();
             String ticketStatus = ticket.getString("status");
             if ("PENDING".equals(ticketStatus) || "PENDING_PAYMENT".equals(ticketStatus)) {
                 batch.update(ticketRef, Map.of(
@@ -322,6 +356,35 @@ public class VnpayPaymentService {
         }
 
         batch.commit().get();
+    }
+
+    private List<DocumentSnapshot> paymentTicketDocuments(DocumentSnapshot payment) throws Exception {
+        String paymentId = payment.getId();
+        Map<String, DocumentSnapshot> result = new LinkedHashMap<>();
+
+        for (String ticketDocumentId : stringList(payment.get("ticketDocumentIds"))) {
+            DocumentSnapshot ticket = firestore.collection("tickets").document(ticketDocumentId).get().get();
+            if (ticket.exists()) {
+                result.put(ticket.getId(), ticket);
+            }
+        }
+
+        String singleTicketDocumentId = payment.getString("ticketId");
+        if (StringUtils.hasText(singleTicketDocumentId)) {
+            DocumentSnapshot ticket = firestore.collection("tickets").document(singleTicketDocumentId).get().get();
+            if (ticket.exists()) {
+                result.put(ticket.getId(), ticket);
+            }
+        }
+
+        firestore.collection("tickets")
+                .whereEqualTo("paymentId", paymentId)
+                .get()
+                .get()
+                .getDocuments()
+                .forEach(ticket -> result.put(ticket.getId(), ticket));
+
+        return new ArrayList<>(result.values());
     }
 
     private Map<String, Object> callbackPaymentUpdates(Map<String, String> params, String status, long now) {

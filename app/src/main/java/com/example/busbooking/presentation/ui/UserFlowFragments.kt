@@ -714,6 +714,7 @@ class BookingConfirmationFragment : Fragment() {
         val originStationText   = view.findViewById<TextView>(R.id.originStationText)
         val destinationCityText = view.findViewById<TextView>(R.id.destinationCityText)
         val destinationStation  = view.findViewById<TextView>(R.id.destinationStationText)
+        val routeDirectionIcon  = view.findViewById<ImageView>(R.id.routeDirectionIcon)
         val ticketIdText        = view.findViewById<TextView>(R.id.ticketIdText)
         val statusText          = view.findViewById<TextView>(R.id.statusText)
         val priceText           = view.findViewById<TextView>(R.id.priceText)
@@ -721,6 +722,8 @@ class BookingConfirmationFragment : Fragment() {
         val pickupDateText      = view.findViewById<TextView>(R.id.pickupDateText)
         val quantityText        = view.findViewById<TextView>(R.id.quantityText)
         val seatText            = view.findViewById<TextView>(R.id.seatText)
+        val returnSeatRow       = view.findViewById<View>(R.id.returnSeatRow)
+        val returnSeatText      = view.findViewById<TextView>(R.id.returnSeatText)
         val pickupPointText     = view.findViewById<TextView>(R.id.pickupPointText)
         val dropoffPointText    = view.findViewById<TextView>(R.id.dropoffPointText)
         val totalPriceText      = view.findViewById<TextView>(R.id.totalPriceText)
@@ -744,23 +747,47 @@ class BookingConfirmationFragment : Fragment() {
         val destination = arguments?.getString("destination").orEmpty()
         val tripDate = arguments?.getLong("tripDate", 0L) ?: 0L
         val departureTime = arguments?.getLong("departureTime", 0L) ?: 0L
+        val isRoundTrip = arguments?.getBoolean("isRoundTrip", false) ?: false
+        val outboundSeatNumbers = arguments?.getStringArrayList("outboundSeatNumbers").orEmpty()
+        val returnSeatNumbers = arguments?.getStringArrayList("returnSeatNumbers").orEmpty()
         val resumePayment = arguments?.getBoolean("resumePayment", false) ?: false
         val hasCheckout = seatNumbers.isNotEmpty() || activePaymentUrl.isNotBlank() || paymentId.isNotBlank()
         reloadPaymentStatusOnResume = hasCheckout
         var requestedResumePayment = false
+
+        fun requestPendingPaymentPayload(statusMessage: String = "Đang tạo lại mã QR VNPAY...") {
+            if (requestedResumePayment) return
+            requestedResumePayment = true
+            qrCard.visibility = View.VISIBLE
+            qrCodeImage.visibility = View.GONE
+            qrStatusText.text = statusMessage
+            payButton.visibility = View.VISIBLE
+            payButton.isEnabled = false
+            payButton.alpha = 0.55f
+            payButton.text = "Đang tạo QR..."
+            cancelPaymentButton.visibility = View.VISIBLE
+            viewModel.loadPendingPayment(ticketId)
+        }
 
         if (hasCheckout) {
             originCityText.text = origin.ifBlank { "\u0110i\u1ec3m \u0111i" }
             originStationText.text = ""
             destinationCityText.text = destination.ifBlank { "\u0110i\u1ec3m \u0111\u1ebfn" }
             destinationStation.text = ""
+            routeDirectionIcon.setImageResource(if (isRoundTrip) R.drawable.ic_swap else R.drawable.ic_bus)
             ticketIdText.text = "#$ticketId"
             statusText.text = "Ch\u1edd x\u00e1c nh\u1eadn"
             priceText.text = "${String.format("%,.0f", totalPrice)} VN\u0110"
             pickupTimeText.text = if (departureTime > 0L) timeFmt.format(Date(departureTime)) else "--:--"
             pickupDateText.text = if (tripDate > 0L) dateFmt.format(Date(tripDate)) else "--/--/----"
             quantityText.text = "${seatNumbers.size.coerceAtLeast(1)} v\u00e9"
-            seatText.text = seatNumbers.joinToString(", ")
+            seatText.text = if (isRoundTrip && outboundSeatNumbers.isNotEmpty()) {
+                outboundSeatNumbers.joinToString(", ")
+            } else {
+                seatNumbers.joinToString(", ")
+            }
+            returnSeatRow.visibility = if (isRoundTrip) View.VISIBLE else View.GONE
+            returnSeatText.text = returnSeatNumbers.joinToString(", ")
             pickupPointText.text = origin.ifBlank { "Theo th\u00f4ng tin chuy\u1ebfn xe" }
             dropoffPointText.text = destination.ifBlank { "Theo th\u00f4ng tin chuy\u1ebfn xe" }
             totalPriceText.text = "${String.format("%,.0f", totalPrice)} VN\u0110"
@@ -768,6 +795,9 @@ class BookingConfirmationFragment : Fragment() {
             bindVnpayQr(activePaymentUrl, qrImageBase64, paymentError, qrCard, qrCodeImage, qrStatusText, payButton)
             payButton.visibility = View.VISIBLE
             cancelPaymentButton.visibility = View.VISIBLE
+            if (activePaymentUrl.isBlank() && paymentId.isNotBlank()) {
+                requestPendingPaymentPayload()
+            }
         } else {
             qrCard.visibility = View.GONE
             payButton.visibility = View.GONE
@@ -792,6 +822,8 @@ class BookingConfirmationFragment : Fragment() {
             originStationText.text   = ""
             destinationCityText.text = route.destination
             destinationStation.text  = ""
+            routeDirectionIcon.setImageResource(R.drawable.ic_bus)
+            returnSeatRow.visibility = View.GONE
 
             ticketIdText.text     = "#${ticket.id}"
             statusText.text       = displayConfirmationStatus(ticket.status)
@@ -817,8 +849,7 @@ class BookingConfirmationFragment : Fragment() {
                 payButton.text = "\u0110ang t\u1ea1o QR..."
                 cancelPaymentButton.visibility = View.VISIBLE
                 if (!requestedResumePayment) {
-                    requestedResumePayment = true
-                    viewModel.loadPendingPayment(ticketId)
+                    requestPendingPaymentPayload()
                 }
             } else {
                 qrCard.visibility = View.GONE
@@ -829,7 +860,11 @@ class BookingConfirmationFragment : Fragment() {
 
         payButton.setOnClickListener {
             if (activePaymentUrl.isBlank()) {
-                Toast.makeText(requireContext(), "Chưa có link thanh toán VNPAY", Toast.LENGTH_SHORT).show()
+                if (paymentId.isNotBlank() || resumePayment) {
+                    requestPendingPaymentPayload("Đang tạo lại link thanh toán VNPAY...")
+                } else {
+                    Toast.makeText(requireContext(), "Chưa có link thanh toán VNPAY", Toast.LENGTH_SHORT).show()
+                }
                 return@setOnClickListener
             }
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(activePaymentUrl)))
@@ -850,6 +885,7 @@ class BookingConfirmationFragment : Fragment() {
 
         viewModel.paymentPayload.observe(viewLifecycleOwner) { payload ->
             payload ?: return@observe
+            requestedResumePayment = false
             activePaymentUrl = payload.paymentUrl
             bindVnpayQr(
                 payload.paymentUrl,
@@ -873,9 +909,12 @@ class BookingConfirmationFragment : Fragment() {
 
         viewModel.error.observe(viewLifecycleOwner) { message ->
             if (!message.isNullOrBlank()) {
+                requestedResumePayment = false
                 qrStatusText.text = message
-                payButton.isEnabled = false
-                payButton.alpha = 0.55f
+                val canRetryPayment = paymentId.isNotBlank() || resumePayment
+                payButton.isEnabled = canRetryPayment
+                payButton.alpha = if (canRetryPayment) 1f else 0.55f
+                payButton.text = if (canRetryPayment) "Thử tạo lại thanh toán" else "Chưa có link thanh toán"
                 Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
                 viewModel.clearError()
             }

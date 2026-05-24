@@ -87,6 +87,7 @@ class TripRepository(
             }
 
             val trips = tripDAO.getTripsForRouteAndDate(route.id, dayStart)
+                .filter { it.trip.departureTime > System.currentTimeMillis() }
             android.util.Log.d("TripRepo", "Trips found: ${trips.size}")
 
             if (trips.isNotEmpty()) {

@@ -58,6 +58,7 @@
                 </LinearLayout>
 
                 <ImageView
+                    android:id="@+id/routeDirectionIcon"
                     android:layout_width="32dp"
                     android:layout_height="32dp"
                     android:layout_marginStart="10dp"
@@ -274,12 +275,38 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Vị trí ghế"
+                        android:text="Ghế chiều đi"
                         android:textColor="@color/text_secondary"
                         android:textSize="14sp" />
 
                     <TextView
                         android:id="@+id/seatText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/returnSeatRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="14dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Ghế chiều về"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/returnSeatText"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textColor="@color/text_primary"
