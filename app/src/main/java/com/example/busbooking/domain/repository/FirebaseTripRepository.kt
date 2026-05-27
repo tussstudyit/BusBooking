@@ -30,9 +30,7 @@ class FirebaseTripRepository(
         try {
             val now = System.currentTimeMillis()
             val route = findRouteByOriginDestination(origin, destination)
-                ?: return@withContext Result.Success(
-                    DemoBookingData.tripsForDate(origin, destination, tripDate).bookableDepartures(now)
-                )
+                ?: return@withContext Result.Success(emptyList())
 
             val dayStart = Calendar.getInstance().apply {
                 timeInMillis = tripDate
@@ -63,16 +61,9 @@ class FirebaseTripRepository(
                 }
                 .sortedBy { it.trip.departureTime }
 
-            Result.Success(
-                if (tripDocuments.isEmpty()) {
-                    DemoBookingData.tripsForDate(origin, destination, tripDate).bookableDepartures(now)
-                } else {
-                    hydrated
-                }
-            )
+            Result.Success(hydrated)
         } catch (e: Exception) {
-            val now = System.currentTimeMillis()
-            Result.Success(DemoBookingData.tripsForDate(origin, destination, tripDate).bookableDepartures(now))
+            Result.Error(e, "Kh\u00f4ng th\u1ec3 t\u1ea3i chuy\u1ebfn xe: ${e.message}")
         }
     }
 
@@ -112,7 +103,7 @@ class FirebaseTripRepository(
         withContext(Dispatchers.IO) {
             try {
                 val trip = findTripById(tripId)
-                    ?: return@withContext Result.Success(DemoBookingData.tripById(tripId))
+                    ?: return@withContext Result.Error(Exception("Not found"), "Kh\u00f4ng t\u00ecm th\u1ea5y chuy\u1ebfn xe")
                 val route = findRouteById(trip.routeId)
                     ?: return@withContext Result.Error(Exception("Not found"), "Route not found")
                 val bus = findBusById(trip.busId)
@@ -120,7 +111,7 @@ class FirebaseTripRepository(
 
                 Result.Success(TripWithRouteAndBus(trip = trip, route = route, bus = bus))
             } catch (e: Exception) {
-                Result.Success(DemoBookingData.tripById(tripId))
+                Result.Error(e, "Kh\u00f4ng th\u1ec3 t\u1ea3i chi ti\u1ebft chuy\u1ebfn xe: ${e.message}")
             }
         }
 
@@ -329,8 +320,4 @@ class FirebaseTripRepository(
             .let { if (it == Long.MIN_VALUE) 0L else kotlin.math.abs(it) }
     }
 
-    private fun List<TripWithRouteAndBus>.bookableDepartures(now: Long): List<TripWithRouteAndBus> {
-        return filter { it.trip.status == "SCHEDULED" && it.trip.departureTime > now }
-            .sortedBy { it.trip.departureTime }
-    }
 }

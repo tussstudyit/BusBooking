@@ -113,41 +113,73 @@ async function updatePaymentFromVnpay(query, hashSecret) {
   }
 
   const payment = paymentSnapshot.data();
+  const expectedAmount = Math.round(Number(payment.amount || 0) * 100);
+  if (expectedAmount <= 0 || String(expectedAmount) !== String(query.vnp_Amount || "")) {
+    return { rspCode: "04", message: "Invalid amount" };
+  }
+
   const success = query.vnp_ResponseCode === "00" && query.vnp_TransactionStatus === "00";
+  if (payment.status === "SUCCESS") {
+    return { rspCode: "00", message: "Confirm success" };
+  }
+  if (!success && ["FAILED", "EXPIRED", "CANCELLED"].includes(payment.status)) {
+    return { rspCode: "00", message: "Payment is closed" };
+  }
+
   const paymentStatus = success ? "SUCCESS" : "FAILED";
   const ticketStatus = success ? "CONFIRMED" : "PAYMENT_FAILED";
-  const tripSeatStatus = success ? "CONFIRMED" : "EXPIRED";
 
-  await db.runTransaction(async (transaction) => {
-    const ticketRef = db.collection("tickets").doc(payment.ticketId);
-    const tripSeatRef = db.collection("tripSeats").doc(`${payment.tripId}_${payment.seatId}`);
+  const ticketRefs = new Map();
+  const addTicketRef = (documentId) => {
+    if (documentId) {
+      ticketRefs.set(String(documentId), db.collection("tickets").doc(String(documentId)));
+    }
+  };
+  (Array.isArray(payment.ticketDocumentIds) ? payment.ticketDocumentIds : []).forEach(addTicketRef);
+  addTicketRef(payment.ticketId);
+  const matchingTickets = await db.collection("tickets").where("paymentId", "==", paymentId).get();
+  matchingTickets.docs.forEach((document) => ticketRefs.set(document.id, document.ref));
+  const ticketSnapshots = await Promise.all([...ticketRefs.values()].map((reference) => reference.get()));
 
-    transaction.update(paymentRef, {
-      status: paymentStatus,
-      vnpTransactionNo: query.vnp_TransactionNo || null,
-      vnpResponseCode: query.vnp_ResponseCode || null,
-      vnpPayDate: query.vnp_PayDate || null,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
+  const batch = db.batch();
+  batch.update(paymentRef, {
+    status: paymentStatus,
+    vnpTransactionNo: query.vnp_TransactionNo || null,
+    vnpResponseCode: query.vnp_ResponseCode || null,
+    vnpTransactionStatus: query.vnp_TransactionStatus || null,
+    vnpBankCode: query.vnp_BankCode || null,
+    vnpPayDate: query.vnp_PayDate || null,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
 
-    transaction.update(ticketRef, {
+  ticketSnapshots.filter((ticket) => ticket.exists).forEach((ticket) => {
+    const ticketData = ticket.data();
+    batch.update(ticket.ref, {
       status: ticketStatus,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
-    if (success) {
-      transaction.set(
-        tripSeatRef,
+    if (success && ticketData.tripSeatDocumentId) {
+      batch.set(
+        db.collection("tripSeats").doc(String(ticketData.tripSeatDocumentId)),
         {
-          status: tripSeatStatus,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          tripId: ticketData.tripId,
+          seatId: ticketData.seatId,
+          ticketId: ticketData.id,
+          ticketDocumentId: ticket.id,
+          paymentId,
+          userId: ticketData.userId || null,
+          userNumericId: ticketData.userNumericId || null,
+          status: "CONFIRMED",
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
         },
         { merge: true }
       );
-    } else {
-      transaction.delete(tripSeatRef);
     }
   });
+
+  await batch.commit();
 
   return { rspCode: "00", message: "Confirm success" };
 }
@@ -249,14 +281,19 @@ exports.vnpayReturnUrlHandler = onRequest(
     secrets: [vnpayHashSecret],
   },
   async (request, response) => {
-    const valid = verifyVnpaySignature(request.query, vnpayHashSecret.value());
-    const success =
-      valid &&
+    let result;
+    try {
+      result = await updatePaymentFromVnpay(request.query, vnpayHashSecret.value());
+    } catch (error) {
+      console.error(error);
+      result = { rspCode: "99", message: "Unknown error" };
+    }
+    const success = result.rspCode === "00" &&
       request.query.vnp_ResponseCode === "00" &&
       request.query.vnp_TransactionStatus === "00";
 
     response
-      .status(valid ? 200 : 400)
+      .status(result.rspCode === "00" ? 200 : 400)
       .send(`
         <!doctype html>
         <html>

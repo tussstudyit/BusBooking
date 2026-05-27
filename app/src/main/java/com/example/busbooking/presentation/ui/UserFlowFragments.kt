@@ -22,6 +22,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavOptions
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
@@ -51,6 +52,10 @@ import com.example.busbooking.presentation.viewmodel.UserViewModel
 import com.example.busbooking.presentation.viewmodel.ViewModelFactory
 import com.example.busbooking.utils.SessionManager
 import com.google.android.material.tabs.TabLayout
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -686,6 +691,7 @@ class BookingConfirmationFragment : Fragment() {
     }
     private var confirmationTicketId: Long = -1L
     private var reloadPaymentStatusOnResume = false
+    private var paymentStatusPollJob: Job? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -697,6 +703,11 @@ class BookingConfirmationFragment : Fragment() {
         if (reloadPaymentStatusOnResume && confirmationTicketId != -1L) {
             viewModel.loadTicket(confirmationTicketId)
         }
+    }
+
+    override fun onDestroyView() {
+        stopPaymentStatusPolling()
+        super.onDestroyView()
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -798,6 +809,7 @@ class BookingConfirmationFragment : Fragment() {
             if (activePaymentUrl.isBlank() && paymentId.isNotBlank()) {
                 requestPendingPaymentPayload()
             }
+            startPaymentStatusPolling(ticketId)
         } else {
             qrCard.visibility = View.GONE
             payButton.visibility = View.GONE
@@ -811,6 +823,11 @@ class BookingConfirmationFragment : Fragment() {
             if (hasCheckout) {
                 statusText.text = displayConfirmationStatus(ticket.status)
                 updateCheckoutPaymentUi(ticket.status, qrStatusText, payButton, cancelPaymentButton)
+                if (isPendingPaymentStatus(ticket.status)) {
+                    startPaymentStatusPolling(ticketId)
+                } else {
+                    stopPaymentStatusPolling()
+                }
                 return@observe
             }
 
@@ -972,10 +989,25 @@ class BookingConfirmationFragment : Fragment() {
                 cancelPaymentButton.visibility = View.GONE
             }
             else -> {
-                qrStatusText.text = "Đang chờ kết quả thanh toán VNPAY. Quay lại màn hình này để tự động cập nhật."
+                qrStatusText.text = "Đang chờ kết quả thanh toán VNPAY. Vé sẽ tự động cập nhật sau khi thanh toán."
                 cancelPaymentButton.visibility = View.VISIBLE
             }
         }
+    }
+
+    private fun startPaymentStatusPolling(ticketId: Long) {
+        if (paymentStatusPollJob?.isActive == true) return
+        paymentStatusPollJob = viewLifecycleOwner.lifecycleScope.launch {
+            while (isActive) {
+                delay(PAYMENT_STATUS_POLL_INTERVAL_MS)
+                viewModel.loadTicket(ticketId)
+            }
+        }
+    }
+
+    private fun stopPaymentStatusPolling() {
+        paymentStatusPollJob?.cancel()
+        paymentStatusPollJob = null
     }
 
     private fun displayConfirmationStatus(status: String): String = when (status) {
@@ -995,5 +1027,9 @@ class BookingConfirmationFragment : Fragment() {
         val bytes = Base64.decode(qrImageBase64, Base64.DEFAULT)
         BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
     }.getOrNull()
+
+    private companion object {
+        const val PAYMENT_STATUS_POLL_INTERVAL_MS = 2_000L
+    }
 }
 

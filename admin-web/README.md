@@ -41,6 +41,14 @@ Use the same public host for the VNPAY merchant IPN URL:
 https://your-public-domain/api/payments/vnpay/ipn
 ```
 
+For local testing from both an Android emulator and another phone, run the project helper instead. It downloads a temporary Cloudflare Tunnel executable on first use, prompts for the sandbox credentials without saving the secret in source control, creates a public return URL, and starts `admin-web`:
+
+```powershell
+.\tools\run-vnpay-public.ps1
+```
+
+Create a new QR after the script prints the public return URL. The generated tunnel URL changes each time the script is restarted, so an old QR still points to its previous callback URL.
+
 4. Run:
 
 ```powershell

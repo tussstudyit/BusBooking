@@ -35,11 +35,14 @@ import java.util.TreeMap;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import javax.imageio.ImageIO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 @Service
 public class VnpayPaymentService {
+    private static final Logger log = LoggerFactory.getLogger(VnpayPaymentService.class);
     private static final ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
     private static final DateTimeFormatter VNPAY_DATE = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
     private static final long PAYMENT_TIMEOUT_MILLIS = 5 * 60 * 1000L;
@@ -152,17 +155,13 @@ public class VnpayPaymentService {
                 return Map.of("RspCode", "01", "Message", "Order not found");
             }
             if (!validCallbackAmount(payment, params)) {
+                log.warn("Rejected VNPAY callback with invalid amount for paymentId={}", paymentId);
                 return Map.of("RspCode", "04", "Message", "Invalid amount");
             }
             String currentStatus = payment.getString("status");
             if ("SUCCESS".equals(currentStatus)) {
+                log.info("Received duplicate successful VNPAY callback for paymentId={}", paymentId);
                 return Map.of("RspCode", "00", "Message", "Confirm success");
-            }
-            if ("FAILED".equals(currentStatus)) {
-                return Map.of("RspCode", "00", "Message", "Payment already failed");
-            }
-            if ("EXPIRED".equals(currentStatus) || "CANCELLED".equals(currentStatus)) {
-                return Map.of("RspCode", "00", "Message", "Payment is closed");
             }
 
             String responseCode = params.get("vnp_ResponseCode");
@@ -170,13 +169,28 @@ public class VnpayPaymentService {
             boolean success = "00".equals(responseCode) && "00".equals(transactionStatus);
 
             if (success) {
+                log.info(
+                        "Confirming successful VNPAY payment paymentId={}, previousStatus={}, transactionNo={}",
+                        paymentId,
+                        currentStatus,
+                        params.get("vnp_TransactionNo")
+                );
                 confirmPayment(paymentRef, payment, params);
                 return Map.of("RspCode", "00", "Message", "Confirm success");
             }
 
+            if ("FAILED".equals(currentStatus)) {
+                return Map.of("RspCode", "00", "Message", "Payment already failed");
+            }
+            if ("EXPIRED".equals(currentStatus) || "CANCELLED".equals(currentStatus)) {
+                return Map.of("RspCode", "00", "Message", "Payment is closed");
+            }
+
+            log.info("Recording unsuccessful VNPAY result paymentId={}, responseCode={}", paymentId, responseCode);
             failPayment(paymentRef, payment, params);
             return Map.of("RspCode", "00", "Message", "Payment failed");
         } catch (Exception e) {
+            log.error("Could not process VNPAY callback", e);
             return Map.of("RspCode", "99", "Message", "Unknown error");
         }
     }
