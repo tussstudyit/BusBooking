@@ -11,6 +11,7 @@ import com.example.busbooking.R
 import com.example.busbooking.data.relations.TicketDetails
 import com.example.busbooking.data.relations.hasTripDeparted
 import com.example.busbooking.data.relations.tripScheduleMillis
+import com.example.busbooking.utils.StatusLabels
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -34,7 +35,7 @@ class TicketAdapter(
         private val dateText: TextView = itemView.findViewById(R.id.dateText)
         private val seatText: TextView = itemView.findViewById(R.id.seatText)
         private val priceText: TextView = itemView.findViewById(R.id.priceText)
-        private val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+        private val dateFormat = SimpleDateFormat("dd/MM/yy HH:mm", Locale.getDefault())
 
         fun bind(details: TicketDetails) {
             val trip = details.tripWithRouteAndBus.trip
@@ -42,7 +43,7 @@ class TicketAdapter(
             val scheduleMillis = details.tripScheduleMillis()
             routeText.text = "${route.origin} \u2192 ${route.destination}"
             statusText.text = statusLabel(details.ticket.status, details.hasTripDeparted())
-            dateText.text = if (scheduleMillis > 0L) dateFormat.format(Date(scheduleMillis)) else "--/--/---- --:--"
+            dateText.text = if (scheduleMillis > 0L) dateFormat.format(Date(scheduleMillis)) else "--/--/-- --:--"
             seatText.text = "Gh\u1ebf ${details.seat.seatNumber}"
             priceText.text = "${String.format("%,.0f", trip.price)} VN\u0110"
             itemView.setOnClickListener { onItemClick(details) }
@@ -50,12 +51,7 @@ class TicketAdapter(
 
         private fun statusLabel(status: String, hasTripDeparted: Boolean): String = when {
             hasTripDeparted && status == "CONFIRMED" -> "\u0110\u00e3 \u0111i"
-            status == "CONFIRMED" -> "\u0110\u00e3 x\u00e1c nh\u1eadn"
-            status == "PENDING" || status == "PENDING_PAYMENT" -> "Ch\u1edd thanh to\u00e1n"
-            status == "PAYMENT_FAILED" -> "Thanh to\u00e1n th\u1ea5t b\u1ea1i"
-            status == "USED" -> "\u0110\u00e3 \u0111i"
-            status == "CANCELLED" -> "\u0110\u00e3 h\u1ee7y"
-            else -> status
+            else -> StatusLabels.ticket(status)
         }
     }
 

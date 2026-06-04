@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="staff_blue">#2196F3</color>
+    <color name="staff_blue_dark">#1E88E5</color>
+    <color name="staff_background">#F8FAFF</color>
+    <color name="staff_surface">#FFFFFF</color>
+    <color name="staff_text_primary">#172033</color>
+    <color name="staff_text_secondary">#65718A</color>
+    <color name="staff_success">#21A67A</color>
+    <color name="staff_warning">#F6A623</color>
+    <color name="staff_danger">#E53935</color>
+    <color name="staff_divider">#E4EAF4</color>
+</resources>

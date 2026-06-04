@@ -129,7 +129,7 @@ class VnpayRepository(
                 return result
             }
         }
-        return Result.failure(lastFailure ?: IllegalStateException("Kh\u00f4ng th\u1ec3 k\u1ebft n\u1ed1i admin-web"))
+        return Result.failure(lastFailure ?: IllegalStateException("Kh\u00f4ng th\u1ec3 k\u1ebft n\u1ed1i Spring web"))
     }
 
     private fun readErrorMessage(responseText: String): String {

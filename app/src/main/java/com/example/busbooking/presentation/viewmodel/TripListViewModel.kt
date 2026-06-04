@@ -38,7 +38,7 @@ class TripListViewModel(
     private val _error = MutableLiveData<String?>(null)
     val error: LiveData<String?> = _error
 
-    fun searchTrips(origin: String, destination: String, tripDate: Long) {
+    fun searchTrips(origin: String, destination: String, tripDate: Long, totalSeats: Int? = null) {
         if (origin.isBlank() || destination.isBlank()) {
             _error.value = "Thông tin tìm kiếm không hợp lệ"
             return
@@ -48,9 +48,10 @@ class TripListViewModel(
         _error.value = null
 
         viewModelScope.launch {
-            when (val result = tripRepository.searchTrips(origin, destination, tripDate)) {
+            when (val result = tripRepository.searchTrips(origin, destination, tripDate, totalSeats)) {
                 is Result.Success -> {
-                    _trips.value = result.data.bookableDepartures().withSeatAvailability()
+                    val items = result.data.bookableDepartures().withSeatAvailability()
+                    _trips.value = totalSeats?.let { seats -> items.filter { it.seatAvailability.totalSeats == seats } } ?: items
                 }
                 is Result.Error -> {
                     _trips.value = emptyList()

@@ -1,20 +1,16 @@
 package com.example.busbooking.presentation.viewmodel
 
 import android.content.Context
-import com.example.busbooking.data.db.BusBookingDatabase
-import com.example.busbooking.domain.repository.*
+import com.example.busbooking.domain.repository.AuthRepository
+import com.example.busbooking.domain.repository.RouteRepository
 
 object ViewModelFactoryProvider {
 
     fun authFactory(context: Context) = ViewModelFactory {
-        val db = BusBookingDatabase.getInstance(context)
-        AuthViewModel(AuthRepository(db.userDao()))
+        AuthViewModel(AuthRepository())
     }
 
     fun routeSearchFactory(context: Context) = ViewModelFactory {
-        val db = BusBookingDatabase.getInstance(context)
-        RouteSearchViewModel(RouteRepository(db.routeDao()))
+        RouteSearchViewModel(RouteRepository())
     }
-
-    // thêm các ViewModel khác ở đây sau
 }

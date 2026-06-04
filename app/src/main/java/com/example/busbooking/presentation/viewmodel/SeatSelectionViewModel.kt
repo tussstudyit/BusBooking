@@ -9,7 +9,7 @@ import com.example.busbooking.data.entity.Seat
 import com.example.busbooking.domain.models.SeatDisplay
 import com.example.busbooking.domain.models.SeatReservationResult
 import com.example.busbooking.domain.models.SeatStatus
-import com.example.busbooking.domain.repository.FirebaseSeatRepository
+import com.example.busbooking.domain.repository.ApiSeatRepository
 import com.example.busbooking.domain.repository.SeatReservationSeat
 import com.example.busbooking.domain.repository.SeatReservationSegment
 import com.example.busbooking.domain.repository.VnpayRepository
@@ -43,7 +43,7 @@ private data class PendingCheckout(
 )
 
 class SeatSelectionViewModel(
-    private val seatRepository: FirebaseSeatRepository,
+    private val seatRepository: ApiSeatRepository,
     private val vnpayRepository: VnpayRepository = VnpayRepository()
 ) : ViewModel() {
     private companion object {
@@ -286,7 +286,7 @@ class SeatSelectionViewModel(
                 }
                 .onFailure { error ->
                     Log.e(TAG, "createPaymentPayload failed paymentId=${pending.paymentId}: ${error.message}", error)
-                    _error.value = error.message ?: "Kh\u00f4ng th\u1ec3 t\u1ea1o link thanh to\u00e1n VNPAY"
+                    _error.value = error.message ?: "Không thể tạo liên kết thanh toán VNPAY"
                 }
             _isProcessing.value = false
         }
@@ -306,3 +306,4 @@ class SeatSelectionViewModel(
         }
     }
 }
+

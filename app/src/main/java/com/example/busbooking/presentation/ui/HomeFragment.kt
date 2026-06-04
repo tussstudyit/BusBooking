@@ -20,7 +20,6 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.viewpager2.widget.ViewPager2
 import com.example.busbooking.R
-import com.example.busbooking.data.db.BusBookingDatabase
 import com.example.busbooking.domain.repository.AuthRepository
 import com.example.busbooking.domain.repository.RouteRepository
 import com.example.busbooking.domain.repository.TicketRepository
@@ -39,12 +38,11 @@ import java.util.*
 class HomeFragment : Fragment() {
 
     private val viewModel: HomeViewModel by viewModels {
-        val db = BusBookingDatabase.getInstance(requireContext())
         ViewModelFactory {
             HomeViewModel(
-                authRepository   = AuthRepository(db.userDao()),
-                ticketRepository = TicketRepository(db.ticketDao(), db.seatDao()),
-                routeRepository  = RouteRepository(db.routeDao())
+                authRepository = AuthRepository(),
+                ticketRepository = TicketRepository(),
+                routeRepository = RouteRepository()
             )
         }
     }
@@ -348,7 +346,7 @@ class HomeFragment : Fragment() {
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
     private fun formatDate(millis: Long): String =
-        SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date(millis))
+        SimpleDateFormat("dd/MM/yy", Locale.getDefault()).format(Date(millis))
 
     private fun buildGreeting(): String {
         val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)

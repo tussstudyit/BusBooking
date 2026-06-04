@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.busbooking.data.entity.User
 import com.example.busbooking.domain.models.Result
-import com.example.busbooking.domain.repository.FirebaseTicketRepository
+import com.example.busbooking.domain.repository.ApiTicketRepository
 import com.example.busbooking.domain.repository.IAuthRepository
 import com.example.busbooking.domain.repository.TicketRepository
 import com.example.busbooking.presentation.ui.state.UserState
@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
 class UserViewModel(
     private val authRepository: IAuthRepository,
     private val ticketRepository: TicketRepository,
-    private val firebaseTicketRepository: FirebaseTicketRepository = FirebaseTicketRepository()
+    private val ApiTicketRepository: ApiTicketRepository = ApiTicketRepository()
 ) : ViewModel() {
 
     private val _userState = MutableLiveData<UserState>(UserState.Idle)
@@ -25,7 +25,7 @@ class UserViewModel(
     fun loadProfile() {
         val userId = SessionManager.getCurrentUserId()
         if (userId <= 0) {
-            _userState.value = UserState.Error("Vui lòng đăng nhập lại")
+            _userState.value = UserState.Error("Vui lÃ²ng Ä‘Äƒng nháº­p láº¡i")
             return
         }
 
@@ -59,7 +59,7 @@ class UserViewModel(
 
         viewModelScope.launch {
             _userState.value = UserState.Loading
-            when (val result = firebaseTicketRepository.getUserActiveTickets(userId)) {
+            when (val result = ApiTicketRepository.getUserActiveTickets(userId)) {
                 is Result.Success -> _userState.value = UserState.TicketsLoaded(result.data)
                 is Result.Error -> loadLocalTickets(userId, result.message)
                 Result.Loading -> Unit
@@ -76,7 +76,7 @@ class UserViewModel(
 
         viewModelScope.launch {
             _userState.value = UserState.Loading
-            when (val result = firebaseTicketRepository.getUserTicketHistory(userId)) {
+            when (val result = ApiTicketRepository.getUserTicketHistory(userId)) {
                 is Result.Success -> _userState.value = UserState.TicketsLoaded(result.data)
                 is Result.Error -> loadLocalTicketHistory(userId, result.message)
                 Result.Loading -> Unit
@@ -100,3 +100,4 @@ class UserViewModel(
         }
     }
 }
+

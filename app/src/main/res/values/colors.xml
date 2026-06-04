@@ -28,7 +28,7 @@
     <color name="text_secondary">#607D8B</color>
     <color name="text_on_primary">#FFFFFF</color>
 
-    <!-- Status -->
+    <!-- Trạng thái -->
     <color name="error">#D32F2F</color>
     <color name="success">#388E3C</color>
     <color name="green_primary">#4CAF50</color>

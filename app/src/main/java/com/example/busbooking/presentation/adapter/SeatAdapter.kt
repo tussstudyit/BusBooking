@@ -54,27 +54,23 @@ class SeatAdapter(
     }
 
     private fun buildItems(seats: List<SeatDisplay>): List<SeatItem> {
-        val result = mutableListOf<SeatItem>()
         val ordered = seats.sortedWith(
-            compareBy<SeatDisplay> { it.seat.seatNumber.seatNumberIndex() ?: Int.MAX_VALUE }
-                .thenBy { it.seat.rowIndex }
+            compareBy<SeatDisplay> { it.seat.rowIndex }
                 .thenBy { it.seat.columnIndex }
+                .thenBy { it.seat.seatNumber.seatNumberIndex() ?: Int.MAX_VALUE }
                 .thenBy { it.seat.id }
         )
         if (ordered.isEmpty()) {
-            return result
+            return emptyList()
         }
 
-        result.add(SeatItem.SeatCell(ordered[0]))
-        result.add(SeatItem.Empty)
-        result.add(ordered.getOrNull(1)?.let { SeatItem.SeatCell(it) } ?: SeatItem.Empty)
-
-        var i = 2
-        while (i < ordered.size) {
-            result.add(ordered.getOrNull(i)?.let { SeatItem.SeatCell(it) } ?: SeatItem.Empty)
-            result.add(ordered.getOrNull(i + 1)?.let { SeatItem.SeatCell(it) } ?: SeatItem.Empty)
-            result.add(ordered.getOrNull(i + 2)?.let { SeatItem.SeatCell(it) } ?: SeatItem.Empty)
-            i += 3
+        val seatsByPosition = ordered.associateBy { it.seat.rowIndex to it.seat.columnIndex }
+        val maxRow = ordered.maxOf { it.seat.rowIndex }
+        val result = mutableListOf<SeatItem>()
+        for (row in 0..maxRow) {
+            for (column in 0..2) {
+                result.add(seatsByPosition[row to column]?.let { SeatItem.SeatCell(it) } ?: SeatItem.Empty)
+            }
         }
         return result
     }

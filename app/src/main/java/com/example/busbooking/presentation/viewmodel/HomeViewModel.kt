@@ -10,7 +10,7 @@ import com.example.busbooking.data.relations.TicketDetails
 import com.example.busbooking.data.relations.isUpcomingTicket
 import com.example.busbooking.domain.models.Result
 import com.example.busbooking.domain.repository.AuthRepository
-import com.example.busbooking.domain.repository.FirebaseTicketRepository
+import com.example.busbooking.domain.repository.ApiTicketRepository
 import com.example.busbooking.domain.repository.RouteRepository
 import com.example.busbooking.domain.repository.TicketRepository
 import com.example.busbooking.utils.SessionManager
@@ -52,7 +52,7 @@ class HomeViewModel(
     private val authRepository: AuthRepository,
     private val ticketRepository: TicketRepository,
     private val routeRepository: RouteRepository,
-    private val firebaseTicketRepository: FirebaseTicketRepository = FirebaseTicketRepository()
+    private val ApiTicketRepository: ApiTicketRepository = ApiTicketRepository()
 ) : ViewModel() {
 
     private val _homeState = MutableLiveData<HomeState>(HomeState.Loading)
@@ -82,7 +82,7 @@ class HomeViewModel(
         val userId = SessionManager.getCurrentUserId()
         if (userId <= 0L) return emptyList()
 
-        return when (val result = firebaseTicketRepository.getUserActiveTickets(userId)) {
+        return when (val result = ApiTicketRepository.getUserActiveTickets(userId)) {
             is Result.Success -> result.data.toReminderTickets()
             is Result.Error -> loadLocalUpcomingTickets(userId)
             Result.Loading -> emptyList()
@@ -180,3 +180,4 @@ class HomeViewModel(
         const val MAX_REMINDER_TICKETS = 5
     }
 }
+

@@ -5,7 +5,6 @@ plugins {
     alias(libs.plugins.google.ksp)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
-    alias(libs.plugins.google.services)
 }
 
 val localProperties = Properties().apply {
@@ -27,20 +26,17 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField(
-            "String",
-            "ADMIN_WEB_BASE_URL",
-            "\"${localProperties.getProperty("admin.web.baseUrl", "http://10.0.2.2:8081")}\""
+        val apiBaseUrl = localProperties.getProperty(
+            "api.baseUrl",
+            localProperties.getProperty("admin.web.baseUrl", "http://10.0.2.2:8081")
         )
+        buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
+        buildConfigField("String", "ADMIN_WEB_BASE_URL", "\"$apiBaseUrl\"")
         buildConfigField(
             "String",
             "ADMIN_WEB_BASE_URLS",
-            "\"${localProperties.getProperty(
-                "admin.web.baseUrls",
-                localProperties.getProperty("admin.web.baseUrl", "http://10.0.2.2:8081")
-            )}\""
-        )
-    }
+            "\"${localProperties.getProperty("admin.web.baseUrls", apiBaseUrl)}\""
+        )    }
 
     buildTypes {
         release {
@@ -74,11 +70,6 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
 
-    // Room
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
-    ksp(libs.androidx.room.compiler)
-
     // DataStore
     implementation(libs.androidx.datastore.preferences)
 
@@ -95,15 +86,9 @@ dependencies {
 
     // Coroutines
     implementation(libs.kotlinx.coroutines)
-    implementation(libs.kotlinx.coroutines.play.services)
 
     // Kotlinx Serialization
     implementation(libs.kotlinx.serialization.json)
-
-    // Firebase
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.auth)
-    implementation(libs.firebase.firestore)
 
     // Bcrypt for password hashing
     implementation(libs.bcrypt)
@@ -118,3 +103,6 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
+
+
+

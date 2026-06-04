@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.busbooking.R
 import com.example.busbooking.data.relations.TripWithRouteAndBus
 import com.example.busbooking.presentation.viewmodel.TripListItem
+import com.example.busbooking.utils.StatusLabels
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -20,7 +21,7 @@ class TripAdapter(
 ) : ListAdapter<TripListItem, TripAdapter.TripViewHolder>(DiffCallback) {
 
     private val timeFmt = SimpleDateFormat("HH:mm", Locale.getDefault())
-    private val dateFmt = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+    private val dateFmt = SimpleDateFormat("dd/MM/yy", Locale.getDefault())
 
     inner class TripViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val busText: TextView = itemView.findViewById(R.id.itemBusText)
@@ -49,7 +50,7 @@ class TripAdapter(
             busText.text = details.bus.busName
             departureText.text = timeFmt.format(Date(details.trip.departureTime))
             dateText.text = dateFmt.format(Date(details.trip.tripDate))
-            busTypeText.text = "XE ${totalSeats} GIƯỜNG"
+            busTypeText.text = "XE $totalSeats GIƯỜNG"
             seatsText.text = seatStatusText(details.trip.status, availableSeats, totalSeats)
             seatsProgress.progress = item.seatAvailability.occupiedPercent
 
@@ -67,7 +68,7 @@ class TripAdapter(
 
     private fun seatStatusText(tripStatus: String, availableSeats: Int, totalSeats: Int): String {
         return when {
-            tripStatus != "SCHEDULED" -> "Trạng thái: $tripStatus"
+            tripStatus != "SCHEDULED" -> "Trạng thái: ${StatusLabels.trip(tripStatus)}"
             totalSeats <= 0 -> "Chưa có sơ đồ ghế"
             availableSeats <= 0 -> "Hết chỗ 0/$totalSeats giường"
             else -> "Còn $availableSeats/$totalSeats giường"

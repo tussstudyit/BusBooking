@@ -26,7 +26,7 @@ import kotlinx.serialization.Serializable
 data class SeatLayoutJson(
     val busId: Long,
     val busTotalSeats: Int,
-    val busType: BusType = BusType.LIMOUSINE_34,  // LIMOUSINE_34, LIMOUSINE_40, etc.
+    val busType: BusType = BusType.LIMOUSINE_34,
     val floors: List<FloorLayout>
 ) {
     companion object {
@@ -55,7 +55,6 @@ data class SeatLayoutJson(
 @Serializable
 enum class BusType {
     LIMOUSINE_34,    // 34 seats, 2 floors
-    LIMOUSINE_40,    // 40 seats, 2 floors
     STANDARD_45,     // 45 seats, regular bus
 }
 
@@ -149,9 +148,9 @@ object SeatLayoutGenerator {
     }
 
     /**
-     * Generate 40-seat limousine layout (2 floors, 20 seats each)
+     * Generate legacy limousine layout using the current 34-seat standard.
      */
-    fun generate40SeatLayout(busId: Long): SeatLayoutJson {
+    fun generateLegacySeatLayout(busId: Long): SeatLayoutJson {
         val floors = mutableListOf<FloorLayout>()
 
         for (floorNum in 1..2) {
@@ -169,15 +168,15 @@ object SeatLayoutGenerator {
                 floorNumber = floorNum,
                 floorLabel = floorLabel,
                 floorLetter = floorLetter.toString(),
-                seatsPerFloor = 20
+                seatsPerFloor = 17
             )
             floors.add(floorLayout)
         }
 
         return SeatLayoutJson(
             busId = busId,
-            busTotalSeats = 40,
-            busType = BusType.LIMOUSINE_40,
+            busTotalSeats = 34,
+            busType = BusType.LIMOUSINE_34,
             floors = floors
         )
     }

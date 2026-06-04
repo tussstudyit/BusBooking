@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/staff_nav_graph"
+    app:startDestination="@id/loginFragment">
+
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="com.example.busbooking.staff.ui.login.LoginFragment"
+        android:label="Đăng nhập">
+        <action
+            android:id="@+id/action_loginFragment_to_homeFragment"
+            app:destination="@id/homeFragment"
+            app:popUpTo="@id/loginFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.example.busbooking.staff.ui.home.HomeFragment"
+        android:label="Trang chủ">
+        <action
+            android:id="@+id/action_homeFragment_to_tripListFragment"
+            app:destination="@id/tripListFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_ticketScannerFragment"
+            app:destination="@id/ticketScannerFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/tripListFragment"
+        android:name="com.example.busbooking.staff.ui.trip.TripListFragment"
+        android:label="Chuyến xe">
+        <action
+            android:id="@+id/action_tripListFragment_to_tripDetailFragment"
+            app:destination="@id/tripDetailFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/tripDetailFragment"
+        android:name="com.example.busbooking.staff.ui.trip.TripDetailFragment"
+        android:label="Chi tiết chuyến">
+        <argument
+            android:name="tripId"
+            app:argType="long" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/ticketScannerFragment"
+        android:name="com.example.busbooking.staff.ui.ticket.TicketScannerFragment"
+        android:label="Quét vé">
+        <action
+            android:id="@+id/action_ticketScannerFragment_to_ticketResultFragment"
+            app:destination="@id/ticketResultFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/ticketResultFragment"
+        android:name="com.example.busbooking.staff.ui.ticket.TicketResultFragment"
+        android:label="Kết quả kiểm vé" />
+
+    <fragment
+        android:id="@+id/profileFragment"
+        android:name="com.example.busbooking.staff.ui.profile.ProfileFragment"
+        android:label="Tài khoản">
+        <action
+            android:id="@+id/action_profileFragment_to_loginFragment"
+            app:destination="@id/loginFragment"
+            app:popUpTo="@id/staff_nav_graph"
+            app:popUpToInclusive="true" />
+    </fragment>
+</navigation>

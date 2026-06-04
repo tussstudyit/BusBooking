@@ -1,36 +1,6 @@
 package com.example.busbooking.data.entity
 
-import androidx.room.Entity
-import androidx.room.ForeignKey
-import androidx.room.Index
-import androidx.room.PrimaryKey
-
-
-@Entity(
-    tableName = "trips",
-    foreignKeys = [
-        ForeignKey(
-            entity = Route::class,
-            parentColumns = ["id"],
-            childColumns = ["routeId"],
-            onDelete = ForeignKey.RESTRICT
-        ),
-        ForeignKey(
-            entity = Bus::class,
-            parentColumns = ["id"],
-            childColumns = ["busId"],
-            onDelete = ForeignKey.RESTRICT
-        )
-    ],
-    indices = [
-        Index(value = ["routeId", "tripDate"]),
-        Index(value = ["busId", "tripDate"]),
-        Index(value = ["departureTime"]),
-        Index(value = ["status"])
-    ]
-)
 data class Trip(
-    @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val routeId: Long,
     val busId: Long,
@@ -48,3 +18,4 @@ object TripStatus {
     const val COMPLETED = "COMPLETED"
     const val CANCELLED = "CANCELLED"
 }
+

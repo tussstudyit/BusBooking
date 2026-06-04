@@ -1,0 +1,194 @@
+[
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\layout_fragment_ticket_result.xml.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\layout\\fragment_ticket_result.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\mipmap-mdpi_ic_launcher.webp.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\mipmap-mdpi\\ic_launcher.webp"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\layout_item_passenger.xml.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\layout\\item_passenger.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\drawable_bg_staff_card.xml.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\drawable\\bg_staff_card.xml"
+    },
+    {
+        "merged": "com.example.busbooking.staff.staff-app-debug-48:/drawable_bg_staff_seat_checked_in.xml.flat",
+        "source": "com.example.busbooking.staff.staff-app-main-50:/drawable/bg_staff_seat_checked_in.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\layout_fragment_home.xml.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\layout\\fragment_home.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\mipmap-anydpi-v26\\ic_launcher_round.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\drawable_ic_qr.xml.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\drawable\\ic_qr.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\mipmap-anydpi-v26\\ic_launcher.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\drawable_bg_staff_primary_button.xml.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\drawable\\bg_staff_primary_button.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\mipmap-xhdpi_ic_launcher_foreground.webp.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\mipmap-xhdpi\\ic_launcher_foreground.webp"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\drawable_bg_staff_seat_available.xml.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\drawable\\bg_staff_seat_available.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\menu_staff_bottom_nav.xml.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\menu\\staff_bottom_nav.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\drawable_ic_bus.xml.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\drawable\\ic_bus.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\drawable_ic_launcher_background.xml.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\drawable\\ic_launcher_background.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\mipmap-xhdpi_ic_launcher_round.webp.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\mipmap-xhdpi\\ic_launcher_round.webp"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\drawable_ic_staff_seat_checked_in.xml.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\drawable\\ic_staff_seat_checked_in.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\drawable_bg_staff_seat_booked.xml.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\drawable\\bg_staff_seat_booked.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\drawable_bg_qr_scan_square.xml.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\drawable\\bg_qr_scan_square.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\layout_item_staff_trip.xml.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\layout\\item_staff_trip.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\drawable_ic_profile.xml.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\drawable\\ic_profile.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\layout_fragment_login.xml.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\layout\\fragment_login.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\layout_staff_zxing_barcode_scanner.xml.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\layout\\staff_zxing_barcode_scanner.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\layout_fragment_trip_detail.xml.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\layout\\fragment_trip_detail.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\mipmap-xxhdpi_ic_launcher_round.webp.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\mipmap-xxhdpi\\ic_launcher_round.webp"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\mipmap-xxhdpi_ic_launcher_foreground.webp.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\mipmap-xxhdpi\\ic_launcher_foreground.webp"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\layout_zxing_capture.xml.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\layout\\zxing_capture.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\drawable_bg_staff_seat_checked_in.xml.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\drawable\\bg_staff_seat_checked_in.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\mipmap-xhdpi_ic_launcher.webp.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\mipmap-xhdpi\\ic_launcher.webp"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\mipmap-xxxhdpi_ic_launcher.webp.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\mipmap-xxxhdpi\\ic_launcher.webp"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\layout_fragment_ticket_scanner.xml.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\layout\\fragment_ticket_scanner.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\mipmap-hdpi_ic_launcher_foreground.webp.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\mipmap-hdpi\\ic_launcher_foreground.webp"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\mipmap-mdpi_ic_launcher_round.webp.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\mipmap-mdpi\\ic_launcher_round.webp"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\mipmap-xxxhdpi_ic_launcher_foreground.webp.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\mipmap-xxxhdpi\\ic_launcher_foreground.webp"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\mipmap-xxhdpi_ic_launcher.webp.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\mipmap-xxhdpi\\ic_launcher.webp"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\mipmap-xxxhdpi_ic_launcher_round.webp.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\mipmap-xxxhdpi\\ic_launcher_round.webp"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\mipmap-mdpi_ic_launcher_foreground.webp.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\mipmap-mdpi\\ic_launcher_foreground.webp"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\layout_item_staff_seat.xml.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\layout\\item_staff_seat.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\layout_activity_staff_main.xml.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\layout\\activity_staff_main.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\drawable_bg_staff_avatar.xml.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\drawable\\bg_staff_avatar.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\drawable_ic_staff_seat_available.xml.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\drawable\\ic_staff_seat_available.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\drawable_ic_home.xml.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\drawable\\ic_home.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\drawable_bg_status_chip.xml.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\drawable\\bg_status_chip.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\mipmap-hdpi_ic_launcher_round.webp.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\mipmap-hdpi\\ic_launcher_round.webp"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\layout_fragment_trip_list.xml.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\layout\\fragment_trip_list.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\drawable_ic_staff_seat_booked.xml.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\drawable\\ic_staff_seat_booked.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\mipmap-hdpi_ic_launcher.webp.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\mipmap-hdpi\\ic_launcher.webp"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-debug-48:\\layout_fragment_profile.xml.flat",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\layout\\fragment_profile.xml"
+    }
+]

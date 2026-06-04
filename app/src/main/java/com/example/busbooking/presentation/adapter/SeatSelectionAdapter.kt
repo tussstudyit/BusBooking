@@ -12,9 +12,9 @@ import com.example.busbooking.R
 import com.example.busbooking.data.entity.Seat
 
 /**
- * Adapter cho màn hình chọn ghế.
- * Dùng entity [Seat] từ Room, không dùng SeatLayout.
- * Layout: item_seat.xml (ImageView icon + TextView số ghế)
+ * Adapter cho mÃ n hÃ¬nh chá»n gháº¿.
+ * Dung model [Seat] tu API, khong dung SeatLayout.
+ * Layout: item_seat.xml (ImageView icon + TextView sá»‘ gháº¿)
  */
 class SeatSelectionAdapter(
     private val onSeatClick: (Seat) -> Unit

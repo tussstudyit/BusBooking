@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.busbooking.R
 import com.example.busbooking.data.relations.TicketDetails
+import com.example.busbooking.utils.StatusLabels
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -39,12 +40,12 @@ class UpcomingTripAdapter(
         val seat = details.seat
         val ticket = details.ticket
 
-        val dateFmt = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+        val dateFmt = SimpleDateFormat("dd/MM/yy", Locale.getDefault())
 
         holder.routeText.text = "${route.origin} \u2192 ${route.destination}"
         holder.dateText.text = dateFmt.format(Date(trip.tripDate))
         holder.seatText.text = "Gh\u1ebf ${seat.seatNumber}"
-        holder.statusText.text = ticket.status
+        holder.statusText.text = StatusLabels.ticket(ticket.status)
         holder.priceText.text = String.format("%,.0f \u0111", trip.price)
 
         holder.itemView.setOnClickListener { onItemClick(ticket.id) }

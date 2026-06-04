@@ -25,7 +25,7 @@
             android:paddingTop="2dp"
             android:paddingEnd="8dp"
             android:paddingBottom="2dp"
-            android:text="CONFIRMED"
+            android:text="Đã xác nhận"
             android:textColor="#FFFFFF"
             android:textSize="10sp"
             android:textStyle="bold" />

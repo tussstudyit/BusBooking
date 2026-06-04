@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.busbooking.data.relations.TicketDetails
 import com.example.busbooking.domain.models.Result
-import com.example.busbooking.domain.repository.FirebaseTicketRepository
+import com.example.busbooking.domain.repository.ApiTicketRepository
 import com.example.busbooking.domain.repository.TicketRepository
 import com.example.busbooking.domain.repository.VnpayPaymentPayload
 import com.example.busbooking.domain.repository.VnpayRepository
@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 
 class BookingConfirmationViewModel(
     private val ticketRepository: TicketRepository,
-    private val firebaseTicketRepository: FirebaseTicketRepository = FirebaseTicketRepository(),
+    private val ApiTicketRepository: ApiTicketRepository = ApiTicketRepository(),
     private val vnpayRepository: VnpayRepository = VnpayRepository()
 ) : ViewModel() {
 
@@ -32,7 +32,7 @@ class BookingConfirmationViewModel(
 
     fun loadTicket(ticketId: Long) {
         viewModelScope.launch {
-            when (val result = firebaseTicketRepository.getTicketById(ticketId)) {
+            when (val result = ApiTicketRepository.getTicketById(ticketId)) {
                 is Result.Success -> _ticket.value = result.data
                 is Result.Error -> loadLocalTicket(ticketId, result.message)
                 Result.Loading -> Unit
@@ -43,7 +43,7 @@ class BookingConfirmationViewModel(
     fun loadPendingPayment(ticketId: Long) {
         _paymentPayload.value = null
         viewModelScope.launch {
-            when (val session = firebaseTicketRepository.getPendingPaymentSession(ticketId)) {
+            when (val session = ApiTicketRepository.getPendingPaymentSession(ticketId)) {
                 is Result.Success -> {
                     vnpayRepository.createPaymentPayload(session.data.paymentId)
                         .onSuccess { payload -> _paymentPayload.value = payload }
@@ -62,7 +62,7 @@ class BookingConfirmationViewModel(
 
     fun cancelPendingPayment(ticketId: Long) {
         viewModelScope.launch {
-            when (val session = firebaseTicketRepository.getPendingPaymentSession(ticketId)) {
+            when (val session = ApiTicketRepository.getPendingPaymentSession(ticketId)) {
                 is Result.Success -> {
                     vnpayRepository.cancelPayment(session.data.paymentId)
                         .onSuccess {
@@ -91,3 +91,4 @@ class BookingConfirmationViewModel(
         }
     }
 }
+

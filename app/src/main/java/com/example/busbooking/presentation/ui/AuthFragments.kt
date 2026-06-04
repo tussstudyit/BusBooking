@@ -14,7 +14,8 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.busbooking.R
-import com.example.busbooking.domain.repository.FirebaseAuthRepository
+import com.example.busbooking.domain.repository.ApiAuthRepository
+import com.example.busbooking.domain.repository.ServerConfig
 import com.example.busbooking.presentation.ui.state.AuthState
 import com.example.busbooking.presentation.viewmodel.AuthViewModel
 import com.example.busbooking.utils.SessionManager
@@ -43,11 +44,12 @@ class SplashFragment : Fragment() {
 
 class LoginFragment : Fragment() {
     private val viewModel: AuthViewModel by viewModels {
-        AuthViewModel.factory(FirebaseAuthRepository())
+        AuthViewModel.factory(ApiAuthRepository())
     }
 
     private lateinit var phoneInput: EditText
     private lateinit var passwordInput: EditText
+    private lateinit var serverInput: EditText
     private lateinit var loginButton: Button
     private lateinit var registerButton: Button
     private lateinit var progressBar: ProgressBar
@@ -64,22 +66,32 @@ class LoginFragment : Fragment() {
 
         phoneInput = view.findViewById(R.id.phoneInput)
         passwordInput = view.findViewById(R.id.passwordInput)
+        serverInput = view.findViewById(R.id.serverInput)
         loginButton = view.findViewById(R.id.loginButton)
         registerButton = view.findViewById(R.id.registerButton)
         progressBar = view.findViewById(R.id.progressBar)
         errorText = view.findViewById(R.id.errorText)
 
+        serverInput.setText(ServerConfig.primaryBaseUrl())
+
         loginButton.setOnClickListener {
             val phone = phoneInput.text.toString().trim()
             val password = passwordInput.text.toString().trim()
+            val serverUrl = serverInput.text.toString().trim()
             if (phone.isBlank() || password.isBlank()) {
                 showError("Vui l\u00f2ng nh\u1eadp s\u1ed1 \u0111i\u1ec7n tho\u1ea1i v\u00e0 m\u1eadt kh\u1ea9u")
                 return@setOnClickListener
             }
+            if (serverUrl.isBlank()) {
+                showError("Vui lòng nhập địa chỉ web admin")
+                return@setOnClickListener
+            }
+            ServerConfig.setBaseUrl(serverUrl)
             viewModel.login(phone, password)
         }
 
         registerButton.setOnClickListener {
+            ServerConfig.setBaseUrl(serverInput.text.toString())
             findNavController().navigate(R.id.action_loginFragment_to_registerFragment)
         }
 
@@ -114,7 +126,7 @@ class LoginFragment : Fragment() {
 
 class RegisterFragment : Fragment() {
     private val viewModel: AuthViewModel by viewModels {
-        AuthViewModel.factory(FirebaseAuthRepository())
+        AuthViewModel.factory(ApiAuthRepository())
     }
 
     private lateinit var nameInput: EditText
@@ -200,3 +212,4 @@ class RegisterFragment : Fragment() {
         errorText.visibility = View.VISIBLE
     }
 }
+

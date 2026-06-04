@@ -5,14 +5,14 @@
     android:id="@+id/nav_graph"
     app:startDestination="@id/splashFragment">
 
-    <!-- ═══════════════════════════════════════════════════════════════════════
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
          Authentication Flow
-         ═══════════════════════════════════════════════════════════════════════ -->
+         â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 
     <fragment
         android:id="@+id/splashFragment"
         android:name="com.example.busbooking.presentation.ui.SplashFragment"
-        android:label="Splash Screen">
+        android:label="Màn hình khởi động">
         <action
             android:id="@+id/action_splashFragment_to_loginFragment"
             app:destination="@id/loginFragment"
@@ -28,7 +28,7 @@
     <fragment
         android:id="@+id/loginFragment"
         android:name="com.example.busbooking.presentation.ui.LoginFragment"
-        android:label="Login">
+        android:label="Đăng nhập">
         <action
             android:id="@+id/action_loginFragment_to_registerFragment"
             app:destination="@id/registerFragment" />
@@ -42,7 +42,7 @@
     <fragment
         android:id="@+id/registerFragment"
         android:name="com.example.busbooking.presentation.ui.RegisterFragment"
-        android:label="Register">
+        android:label="Đăng ký">
         <action
             android:id="@+id/action_registerFragment_to_loginFragment"
             app:destination="@id/loginFragment"
@@ -55,14 +55,14 @@
             app:popUpToInclusive="true" />
     </fragment>
 
-    <!-- ═══════════════════════════════════════════════════════════════════════
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
          Home
-         ═══════════════════════════════════════════════════════════════════════ -->
+         â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 
     <fragment
         android:id="@+id/nav_home"
         android:name="com.example.busbooking.presentation.ui.HomeFragment"
-        android:label="Trang chu">
+        android:label="Trang chủ">
         <action
             android:id="@+id/action_homeFragment_to_ticketDetailsFragment"
             app:destination="@id/ticketDetailsFragment" />
@@ -71,14 +71,14 @@
             app:destination="@id/tripListFragment" />
     </fragment>
 
-    <!-- ═══════════════════════════════════════════════════════════════════════
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
          User Flow
-         ═══════════════════════════════════════════════════════════════════════ -->
+         â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 
     <fragment
         android:id="@+id/routeSearchFragment"
         android:name="com.example.busbooking.presentation.ui.RouteSearchFragment"
-        android:label="Search Routes">
+        android:label="Tuyến xe">
         <action
             android:id="@+id/action_routeSearchFragment_to_tripListFragment"
             app:destination="@id/tripListFragment" />
@@ -87,7 +87,7 @@
     <fragment
         android:id="@+id/myTicketsFragment"
         android:name="com.example.busbooking.presentation.ui.MyTicketsFragment"
-        android:label="My Tickets">
+        android:label="Vé của tôi">
         <action
             android:id="@+id/action_myTicketsFragment_to_ticketDetailsFragment"
             app:destination="@id/ticketDetailsFragment" />
@@ -99,12 +99,12 @@
     <fragment
         android:id="@+id/bookingHistoryFragment"
         android:name="com.example.busbooking.presentation.ui.BookingHistoryFragment"
-        android:label="Booking History" />
+        android:label="Lịch sử đặt vé" />
 
     <fragment
         android:id="@+id/ticketDetailsFragment"
         android:name="com.example.busbooking.presentation.ui.TicketDetailsFragment"
-        android:label="Ticket Details">
+        android:label="Chi tiết vé">
         <argument
             android:name="ticketId"
             app:argType="long" />
@@ -113,7 +113,7 @@
     <fragment
         android:id="@+id/userProfileFragment"
         android:name="com.example.busbooking.presentation.ui.UserProfileFragment"
-        android:label="Profile">
+        android:label="Hồ sơ">
         <action
             android:id="@+id/action_userProfileFragment_to_loginFragment"
             app:destination="@id/loginFragment"
@@ -121,14 +121,14 @@
             app:popUpToInclusive="true" />
     </fragment>
 
-    <!-- ═══════════════════════════════════════════════════════════════════════
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
          Trip / Booking Flow
-         ═══════════════════════════════════════════════════════════════════════ -->
+         â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 
     <fragment
         android:id="@+id/tripListFragment"
         android:name="com.example.busbooking.presentation.ui.TripListFragment"
-        android:label="Available Trips">
+        android:label="Chuyến còn vé">
         <action
             android:id="@+id/action_tripListFragment_to_tripDetailsFragment"
             app:destination="@id/tripDetailsFragment" />
@@ -137,17 +137,17 @@
     <fragment
         android:id="@+id/tripDetailsFragment"
         android:name="com.example.busbooking.presentation.ui.TripDetailsFragment"
-        android:label="Trip Details">
+        android:label="Chi tiết chuyến">
         <argument
             android:name="tripId"
             app:argType="long" />
-        <!-- ✅ Action nằm ĐÚNG VỊ TRÍ bên trong tripDetailsFragment -->
+        <!-- âœ… Action náº±m ÄÃšNG Vá»Š TRÃ bÃªn trong tripDetailsFragment -->
         <action
             android:id="@+id/action_tripDetailsFragment_to_seatSelectionFragment"
             app:destination="@id/seatSelectionFragment" />
     </fragment>
 
-    <!-- ✅ Khai báo 1 lần duy nhất, đủ cả 2 argument -->
+    <!-- âœ… Khai bÃ¡o 1 láº§n duy nháº¥t, Ä‘á»§ cáº£ 2 argument -->
     <fragment
         android:id="@+id/seatSelectionFragment"
         android:name="com.example.busbooking.presentation.ui.SeatSelectionFragment"
@@ -168,7 +168,7 @@
     <fragment
         android:id="@+id/bookingConfirmationFragment"
         android:name="com.example.busbooking.presentation.ui.BookingConfirmationFragment"
-        android:label="Confirm Booking">
+        android:label="Xác nhận đặt vé">
         <argument
             android:name="ticketId"
             app:argType="long" />
@@ -178,143 +178,5 @@
             app:popUpTo="@id/nav_home"
             app:popUpToInclusive="false" />
     </fragment>
-
-    <!-- ═══════════════════════════════════════════════════════════════════════
-         Admin Flow
-         ═══════════════════════════════════════════════════════════════════════ -->
-
-    <fragment
-        android:id="@+id/adminDashboardFragment"
-        android:name="com.example.busbooking.presentation.ui.AdminDashboardFragment"
-        android:label="Admin Dashboard">
-        <action
-            android:id="@+id/action_adminDashboardFragment_to_routeListAdminFragment"
-            app:destination="@id/routeListAdminFragment" />
-        <action
-            android:id="@+id/action_adminDashboardFragment_to_busListAdminFragment"
-            app:destination="@id/busListAdminFragment" />
-        <action
-            android:id="@+id/action_adminDashboardFragment_to_tripListAdminFragment"
-            app:destination="@id/tripListAdminFragment" />
-        <action
-            android:id="@+id/action_adminDashboardFragment_to_ticketListAdminFragment"
-            app:destination="@id/ticketListAdminFragment" />
-        <action
-            android:id="@+id/action_adminDashboardFragment_to_userListAdminFragment"
-            app:destination="@id/userListAdminFragment" />
-        <action
-            android:id="@+id/action_adminDashboardFragment_to_analyticsFragment"
-            app:destination="@id/analyticsFragment" />
-        <action
-            android:id="@+id/action_adminDashboardFragment_to_adminProfileFragment"
-            app:destination="@id/adminProfileFragment" />
-    </fragment>
-
-    <fragment
-        android:id="@+id/ticketListAdminFragment"
-        android:name="com.example.busbooking.presentation.ui.TicketListAdminFragment"
-        android:label="Manage Tickets" />
-
-    <fragment
-        android:id="@+id/userListAdminFragment"
-        android:name="com.example.busbooking.presentation.ui.UserListAdminFragment"
-        android:label="Manage Users" />
-
-    <fragment
-        android:id="@+id/analyticsFragment"
-        android:name="com.example.busbooking.presentation.ui.AnalyticsFragment"
-        android:label="Analytics" />
-
-    <fragment
-        android:id="@+id/adminProfileFragment"
-        android:name="com.example.busbooking.presentation.ui.AdminProfileFragment"
-        android:label="Admin Profile">
-        <action
-            android:id="@+id/action_adminProfileFragment_to_loginFragment"
-            app:destination="@id/loginFragment"
-            app:popUpTo="@id/adminDashboardFragment"
-            app:popUpToInclusive="true" />
-    </fragment>
-
-    <!-- ═══════════════════════════════════════════════════════════════════════
-         Route Admin
-         ═══════════════════════════════════════════════════════════════════════ -->
-
-    <fragment
-        android:id="@+id/routeListAdminFragment"
-        android:name="com.example.busbooking.presentation.ui.RouteListAdminFragment"
-        android:label="Manage Routes">
-        <action
-            android:id="@+id/action_routeListAdminFragment_to_routeFormAdminFragment"
-            app:destination="@id/routeFormAdminFragment" />
-    </fragment>
-
-    <fragment
-        android:id="@+id/routeFormAdminFragment"
-        android:name="com.example.busbooking.presentation.ui.RouteFormAdminFragment"
-        android:label="Route Form">
-        <argument
-            android:name="routeId"
-            app:argType="long"
-            android:defaultValue="-1L" />
-    </fragment>
-
-    <!-- ═══════════════════════════════════════════════════════════════════════
-         Bus Admin
-         ═══════════════════════════════════════════════════════════════════════ -->
-
-    <fragment
-        android:id="@+id/busListAdminFragment"
-        android:name="com.example.busbooking.presentation.ui.BusListAdminFragment"
-        android:label="Manage Buses">
-        <action
-            android:id="@+id/action_busListAdminFragment_to_busFormAdminFragment"
-            app:destination="@id/busFormAdminFragment" />
-        <action
-            android:id="@+id/action_busListAdminFragment_to_seatManagementFragment"
-            app:destination="@id/seatManagementFragment" />
-    </fragment>
-
-    <fragment
-        android:id="@+id/busFormAdminFragment"
-        android:name="com.example.busbooking.presentation.ui.BusFormAdminFragment"
-        android:label="Bus Form">
-        <argument
-            android:name="busId"
-            app:argType="long"
-            android:defaultValue="-1L" />
-    </fragment>
-
-    <fragment
-        android:id="@+id/seatManagementFragment"
-        android:name="com.example.busbooking.presentation.ui.SeatManagementFragment"
-        android:label="Manage Seats">
-        <argument
-            android:name="busId"
-            app:argType="long" />
-    </fragment>
-
-    <!-- ═══════════════════════════════════════════════════════════════════════
-         Trip Admin
-         ═══════════════════════════════════════════════════════════════════════ -->
-
-    <fragment
-        android:id="@+id/tripListAdminFragment"
-        android:name="com.example.busbooking.presentation.ui.TripListAdminFragment"
-        android:label="Manage Trips">
-        <action
-            android:id="@+id/action_tripListAdminFragment_to_tripFormAdminFragment"
-            app:destination="@id/tripFormAdminFragment" />
-    </fragment>
-
-    <fragment
-        android:id="@+id/tripFormAdminFragment"
-        android:name="com.example.busbooking.presentation.ui.TripFormAdminFragment"
-        android:label="Trip Form">
-        <argument
-            android:name="tripId"
-            app:argType="long"
-            android:defaultValue="-1L" />
-    </fragment>
-
 </navigation>
+

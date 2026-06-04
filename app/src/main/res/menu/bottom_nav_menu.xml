@@ -13,8 +13,8 @@
 
     <item
         android:id="@+id/routeSearchFragment"
-        android:icon="@drawable/ic_route_outline"
-        android:title="Lộ trình" />
+        android:icon="@drawable/ic_route_selector"
+        android:title="Tuyến xe" />
 
     <item
         android:id="@+id/userProfileFragment"

@@ -2,21 +2,15 @@ package com.example.busbooking
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
-import com.example.busbooking.domain.repository.TestDataRepository
+import com.example.busbooking.domain.repository.ServerConfig
 import com.example.busbooking.utils.SessionManager
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import com.google.firebase.FirebaseApp
-import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 
@@ -25,24 +19,16 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ServerConfig.initialize(this)
+        SessionManager.initialize(this)
         setContentView(R.layout.activity_main)
 
-        FirebaseApp.getInstance().options.let { options ->
-            Log.i(
-                "BusBookingFirebase",
-                "projectId=${options.projectId}, appId=${options.applicationId}, apiKey=${options.apiKey}"
-            )
-        }
-
-        SessionManager.initialize(this)
-        refreshRollingTestData()
-
-        // Lấy NavController từ NavHostFragment
+        // LÃ¡ÂºÂ¥y NavController tÃ¡Â»Â« NavHostFragment
         val navHostFragment = supportFragmentManager
             .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         navController = navHostFragment.navController
 
-        // Gắn BottomNav với NavController
+        // GÃ¡ÂºÂ¯n BottomNav vÃ¡Â»â€ºi NavController
         bottomNav = findViewById(R.id.bottomNavigation)
         bottomNav.setupWithNavController(navController)
         bottomNav.visibility = View.GONE
@@ -64,17 +50,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         handlePaymentReturnIntent(intent)
-    }
-
-    private fun refreshRollingTestData() {
-        if (!BuildConfig.DEBUG) return
-        lifecycleScope.launch {
-            TestDataRepository()
-                .refreshRollingTrips()
-                .onFailure { error ->
-                    Log.w("BusBookingTestData", "Cannot refresh rolling test data: ${error.message}")
-                }
-        }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -100,3 +75,5 @@ class MainActivity : AppCompatActivity() {
         }
     }
 }
+
+

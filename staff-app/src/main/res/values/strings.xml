@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">BusBooking Nhân viên</string>
+    <string name="nav_home">Trang chủ</string>
+    <string name="nav_trips">Chuyến xe</string>
+    <string name="nav_scan">Quét vé</string>
+    <string name="nav_profile">Tài khoản</string>
+</resources>

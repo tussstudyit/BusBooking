@@ -1,0 +1,58 @@
+[
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-mergeDebugResources-47:\\layout\\zxing_capture.xml",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\layout\\zxing_capture.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-mergeDebugResources-47:\\layout\\fragment_trip_list.xml",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\layout\\fragment_trip_list.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-mergeDebugResources-47:\\layout\\item_staff_trip.xml",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\layout\\item_staff_trip.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-mergeDebugResources-47:\\layout\\fragment_trip_detail.xml",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\layout\\fragment_trip_detail.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-mergeDebugResources-47:\\layout\\fragment_home.xml",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\layout\\fragment_home.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-mergeDebugResources-47:\\layout\\fragment_ticket_result.xml",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\layout\\fragment_ticket_result.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-mergeDebugResources-47:\\layout\\item_passenger.xml",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\layout\\item_passenger.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-mergeDebugResources-47:\\layout\\fragment_login.xml",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\layout\\fragment_login.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-mergeDebugResources-47:\\layout\\fragment_ticket_scanner.xml",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\layout\\fragment_ticket_scanner.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-mergeDebugResources-47:\\layout\\item_staff_seat.xml",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\layout\\item_staff_seat.xml"
+    },
+    {
+        "merged": "com.example.busbooking.staff.staff-app-mergeDebugResources-47:/layout/fragment_trip_list.xml",
+        "source": "com.example.busbooking.staff.staff-app-main-50:/layout/fragment_trip_list.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-mergeDebugResources-47:\\layout\\staff_zxing_barcode_scanner.xml",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\layout\\staff_zxing_barcode_scanner.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-mergeDebugResources-47:\\layout\\fragment_profile.xml",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\layout\\fragment_profile.xml"
+    },
+    {
+        "merged": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-mergeDebugResources-47:\\layout\\activity_staff_main.xml",
+        "source": "C:\\Users\\ADMIN\\.gradle\\daemon\\9.4.1\\com.example.busbooking.staff.staff-app-main-50:\\layout\\activity_staff_main.xml"
+    }
+]
