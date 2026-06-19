@@ -20,6 +20,11 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at BIGINT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+CREATE TABLE IF NOT EXISTS app_seed_history (
+    seed_key VARCHAR(100) PRIMARY KEY,
+    applied_at BIGINT NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 CREATE TABLE IF NOT EXISTS bus_companies (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(160) NOT NULL,
@@ -167,7 +172,6 @@ CREATE TABLE IF NOT EXISTS tickets (
     refund_amount DECIMAL(12,2) NULL,
     refund_status VARCHAR(32) NOT NULL DEFAULT 'NONE',
     updated_at BIGINT NULL,
-    UNIQUE KEY uk_tickets_trip_seat (trip_id, seat_id),
     INDEX idx_tickets_user (user_id),
     INDEX idx_tickets_payment (payment_id),
     CONSTRAINT fk_tickets_user FOREIGN KEY (user_id) REFERENCES users(id),
@@ -271,15 +275,73 @@ SET @drop_username_sql = IF(@has_username_column > 0, 'ALTER TABLE users DROP CO
 PREPARE drop_username_stmt FROM @drop_username_sql;
 EXECUTE drop_username_stmt;
 DEALLOCATE PREPARE drop_username_stmt;
+SET @has_ticket_seat_unique = (
+    SELECT COUNT(*)
+    FROM information_schema.STATISTICS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tickets' AND INDEX_NAME = 'uk_tickets_trip_seat'
+);
+SET @drop_ticket_seat_unique_sql = IF(@has_ticket_seat_unique > 0, 'ALTER TABLE tickets DROP INDEX uk_tickets_trip_seat', 'SELECT 1');
+PREPARE drop_ticket_seat_unique_stmt FROM @drop_ticket_seat_unique_sql;
+EXECUTE drop_ticket_seat_unique_stmt;
+DEALLOCATE PREPARE drop_ticket_seat_unique_stmt;
 ALTER TABLE buses ADD COLUMN IF NOT EXISTS company_id BIGINT NULL AFTER id;
 ALTER TABLE routes ADD COLUMN IF NOT EXISTS seat_count INT NOT NULL DEFAULT 34 AFTER distance;
 ALTER TABLE staff_profiles ADD COLUMN IF NOT EXISTS company_id BIGINT NULL AFTER user_id;
 ALTER TABLE staff_bus_assignments ADD COLUMN IF NOT EXISTS company_id BIGINT NULL AFTER bus_id;
 ALTER TABLE trips ADD COLUMN IF NOT EXISTS company_id BIGINT NULL AFTER id;
 ALTER TABLE trip_staff_assignments ADD COLUMN IF NOT EXISTS company_id BIGINT NULL AFTER bus_id;
-UPDATE routes SET seat_count = 34 WHERE seat_count IS NULL OR seat_count NOT IN (24, 34);
 
--- Data seed removed. Fixed data was loaded once; rolling trips are generated at runtime.
+-- Initial accounts are inserted once. The marker prevents later startups/imports
+-- from recreating deleted accounts or overwriting data managed by the admin.
+SET @initial_accounts_seeded = (
+    SELECT COUNT(*) FROM app_seed_history WHERE seed_key = 'initial_accounts_v1'
+);
+SET @seed_now = CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP(3)) * 1000 AS UNSIGNED);
+
+INSERT INTO users(uid, name, email, password, phone, role, is_blocked, created_at)
+SELECT 'admin-initial', 'BusBooking Admin', 'busbooking.admin@gmail.com',
+       '$2a$10$zyek1WIOXt3IIFrCbonjL.FLIyO.iw3UCWqIWLl5P3AJcuQh31DBq',
+       '0900000000', 'ADMIN', FALSE, @seed_now
+WHERE @initial_accounts_seeded = 0
+  AND NOT EXISTS (
+      SELECT 1 FROM users
+      WHERE uid = 'admin-initial' OR email = 'busbooking.admin@gmail.com' OR phone = '0900000000'
+  );
+
+INSERT INTO users(uid, name, email, password, phone, role, is_blocked, created_at)
+SELECT 'user-initial', 'BusBooking User', 'busbooking.user@gmail.com',
+       '$2a$10$zyek1WIOXt3IIFrCbonjL.FLIyO.iw3UCWqIWLl5P3AJcuQh31DBq',
+       '0900000001', 'USER', FALSE, @seed_now
+WHERE @initial_accounts_seeded = 0
+  AND NOT EXISTS (
+      SELECT 1 FROM users
+      WHERE uid = 'user-initial' OR email = 'busbooking.user@gmail.com' OR phone = '0900000001'
+  );
+
+INSERT INTO users(uid, name, email, password, phone, role, is_blocked, created_at)
+SELECT 'staff-initial', 'BusBooking Staff', 'busbooking.staff@gmail.com',
+       '$2a$10$73omUGSLStBcbK21OaI3kee9afJ1GzZLiATJJRWp5r.n2cx5OPa5a',
+       '0900000002', 'STAFF', FALSE, @seed_now
+WHERE @initial_accounts_seeded = 0
+  AND NOT EXISTS (
+      SELECT 1 FROM users
+      WHERE uid = 'staff-initial' OR email = 'busbooking.staff@gmail.com' OR phone = '0900000002'
+  );
+
+INSERT INTO staff_profiles(user_id, staff_code, position, status, created_at)
+SELECT u.id, 'STAFF001', 'STAFF', 'ACTIVE', @seed_now
+FROM users u
+WHERE @initial_accounts_seeded = 0
+  AND u.email = 'busbooking.staff@gmail.com'
+  AND u.role = 'STAFF'
+  AND NOT EXISTS (SELECT 1 FROM staff_profiles sp WHERE sp.user_id = u.id OR sp.staff_code = 'STAFF001');
+
+INSERT INTO app_seed_history(seed_key, applied_at)
+SELECT 'initial_accounts_v1', @seed_now
+WHERE @initial_accounts_seeded = 0;
+
+-- Other reference/managed data is never seeded here. Missing trips for the next
+-- 5 days are generated at runtime without changing existing managed trips.
 SET FOREIGN_KEY_CHECKS = 1;
 
 
